@@ -34,7 +34,7 @@ playback**, so the viewer never waits on a model. Every design decision below se
 two goals: **hide latency** and **prevent narrative drift**.
 ## Character references
 
-Pre-production character locks come from `character-reference-sheet`: one spec per character (the canon file the Showrunner reads), one pack per character. Every `ref2v` shot takes its identity refs from `manifest.json` → `top_refs` sized to the model's cap, and its `identity_text` goes into the shot prompt.
+Pre-production character locks come from `character-reference-sheet`: one spec per character (the canon file the Showrunner reads), one sheet per character. Every `ref2v` shot passes the full panel `sheet.jpg` of each character in the shot (`manifest.json` → `video_ref`), plus that character's `identity_text` in the shot prompt.
 
 ## 1. Verify model limits BEFORE writing any spec
 

@@ -35,13 +35,28 @@ reason a character drifts across shots.
 
 | Output | Who reads it | Why |
 |---|---|---|
-| `sheet.jpg` (2400×3300) | Humans | Review and approval, the thing that looks like the examples |
-| `pack/NN_<plate>.png` + `manifest.json` | Video models | One clean plate per image, ranked |
+| `sheet.jpg` (2400×3300) | Humans for approval, **and most video models** | The full panel image is the default character reference (`manifest.json` → `video_ref`) |
+| `pack/NN_<plate>.png` | Single-image models only | One clean plate per image, ranked |
+| `manifest.json` | Every consumer | `video_ref`, `single_image_ref`, `top_refs`, `identity_text` |
 
-**Never feed the composed sheet to a video model as a reference.** A collage
-teaches the model to render a collage, panel borders and labels included.
-Video models get individual plates from `pack/`, in rank order, cut to their
-reference cap with `manifest.json` → `top_refs`.
+**Default: give reference-to-video models the full panel sheet**, one image
+per character (user decision, 2026-09-28). This is how production turnaround
+sheets are used: every angle, expression and costume detail in one reference,
+and the panel labels tell the model which view is which. With several
+characters, pass one sheet each, which also stays inside a 9-image cap.
+
+**Exception: models that take ONE image of ONE person** and cut it out or map
+it onto a pose. A multi-figure sheet breaks them, so they get
+`single_image_ref` (a single plate):
+- H3 swap (`ref-character-replacement-content-pipeline`): SAM3 must isolate one
+  person, and with the background box ticked the reference becomes the
+  background.
+- VACE / Wan Animate (`video-character-replacement`).
+- Lip-sync / talking-head avatars.
+
+**Unverified:** whether panel labels or borders ever show up in renders. That
+has not been measured. If they do on some model, check the first frames and fall
+back to `top_refs` for that model.
 
 ## Consent (enforced in `build_sheet.py`, not optional)
 
@@ -100,21 +115,23 @@ python3 $S qc | compose | pack <spec.yaml>    # no spend
 7. **Deliver** `sheet.jpg`, the `pack/` folder and `manifest.json`. For Drive,
    file under the project the character belongs to.
 
-## Handing the pack to video skills
+## Handing it to video skills
 
-`manifest.json` → `top_refs` gives the best N plates for each reference cap.
-Rank order: `face_front, turn_front, turn_side, turn_back, face_profile,
-expr_neutral, turn_three_quarter, face_three_quarter, pose_walking,
-pose_neutral_stand`, then the rest.
+| Consumer | Reference to pass |
+|---|---|
+| `seedance-video` (seedance-2.0, 9 refs; 1-lite, 4) | `sheet.jpg`, one per character |
+| Kling O1 / other `reference_images` models | `sheet.jpg`, one per character |
+| `branching-ai-film-engine` `ref2v` shots | `sheet.jpg` per character in shot; spec = canon file |
+| `generative-media-pipeline-design`, `generative-video-consistency` | `sheet.jpg` as the identity lock |
+| `motion-trainer-for-generative-video` | `sheet.jpg` for reference-to-video; `single_image_ref` for avatar insertion |
+| `ref-character-replacement-content-pipeline` (H3 swap) | **single plate**: `turn_front` (full body, plain backdrop, clean SAM3 cutout) |
+| `video-character-replacement` (VACE / Wan Animate) | **single plate**: `turn_front` |
+| Lip-sync / talking-head avatar | **single plate**: `face_front` or an `expr_*` plate |
+| nano-banana-pro / seedream stills (new shots of the character) | `sheet.jpg`, plus plates if there's room under the cap |
 
-| Consumer | Cap | Use |
-|---|---|---|
-| `ref-character-replacement-content-pipeline` (H3 ref2va) | 1 character image in the graph | `turn_front` (full body, plain backdrop, so SAM3's cutout is clean). Plain backdrop also means no environment leaks in when the background box is unticked |
-| `seedance-video` / seedance-2.0 | 9 `reference_images` | `top_refs["9"]`; round-robin across characters when there are several |
-| seedance-1-lite | 4 | `top_refs["4"]` |
-| `video-character-replacement` (VACE / Wan Animate) | 1 | `turn_front` |
-| nano-banana-pro / seedream stills | 14 | the whole pack |
-| `branching-ai-film-engine` pre-production | per shot | pack plates as identity locks; the spec is the canon file |
+Single-plate rank order (`top_refs`): `face_front, turn_front, turn_side,
+turn_back, face_profile, expr_neutral, turn_three_quarter, face_three_quarter,
+pose_walking, pose_neutral_stand`, then the rest.
 
 Also pass `manifest.json` → `identity_text` into the video prompt, so text and
 image describe the same person.
@@ -186,4 +203,5 @@ the full set once the user approves.
 - [ ] `qc.json` pass, or every failure re-rolled or knowingly dropped
 - [ ] Vision check per group; 3/4 slots judged specifically
 - [ ] `sheet.jpg` text read back (it's drawn, so it should be exact)
-- [ ] `pack/` plus `manifest.json` delivered; video skills pointed at `top_refs`
+- [ ] `sheet.jpg`, `pack/` and `manifest.json` delivered; `video_ref` is the sheet
+- [ ] First render using the sheet checked for leaked panel labels or borders

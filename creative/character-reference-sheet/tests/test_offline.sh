@@ -81,6 +81,8 @@ assert any("turn_side" in x for x in m["pack_order"]), "corrected plate wrongly 
 assert not any("material_" in x for x in m["pack_order"])
 assert m["qc_pass"] is False and "turn_back" in m["excluded_by_qc"]
 assert len(m["top_refs"]["4"]) == 4
+assert m["video_ref"] == "sheet.jpg", m.get("video_ref")          # full panel = default video ref
+assert m["single_image_ref"] == "pack/01_face_front.png", m.get("single_image_ref")
 EOF
 cp $T/testchar/sheet.jpg /tmp/rs_test_sheet.jpg
 rm -rf "$T"

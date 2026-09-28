@@ -45,7 +45,7 @@ Use `comfyui` with open-weight models (LTX-2.5, Wan) instead when the work
 must run locally, needs custom nodes, or must avoid per-generation billing.
 ## Character references
 
-For character locks, build a `character-reference-sheet` pack first (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`). Pass `manifest.json` → `top_refs["9"]` as seedance-2.0 `reference_images` (`top_refs["4"]` for seedance-1-lite), in rank order; with several characters, round-robin across their packs within the cap. Never pass the composed `sheet.jpg`: a collage as a reference teaches the model to render collage panels and labels.
+Build a `character-reference-sheet` for each character. Use the **full panel sheet** (`sheet.jpg`, `~/.hermes/data/character-reference-sheet/<slug>/`, `manifest.json` → `video_ref`) as the character reference, one image per character. With several characters, pass one sheet each; that fits inside seedance-2.0's 9-image cap with room for scene references. Put `identity_text` in the prompt. Whether panel labels or borders ever leak into renders hasn't been measured: check the first frames, and if they do, fall back to the individual plates (`top_refs["9"]`).
 
 ## Prerequisites
 

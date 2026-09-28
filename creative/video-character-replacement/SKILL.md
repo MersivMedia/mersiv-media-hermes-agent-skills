@@ -41,7 +41,7 @@ is hours cheaper and does not degrade the base model's motion prior.
 - Debug a replacement where the background warps, swims, or leaks
 ## Character references
 
-Source the replacement character from a `character-reference-sheet` pack (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`), not a single casual photo. VACE and Wan Animate take one image: use `turn_front` (full body, neutral backdrop, no cinematic grade, so nothing but identity carries into the shot). Pass `identity_text` from the manifest into the prompt.
+Source the character from a `character-reference-sheet` build, as a **single plate**, not the full sheet: VACE and Wan Animate map one image of one person onto the source pose, and a multi-figure sheet breaks that. Use `pack/..._turn_front.png` (full body, neutral backdrop, no grade). Pass `identity_text` from the manifest into the prompt.
 
 ## Prerequisites
 

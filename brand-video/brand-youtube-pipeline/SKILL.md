@@ -17,7 +17,7 @@ The full process: NotebookLM in → [brand] video out. 8 sequential phases, each
 Source attribution: framework adapted from @w1nklerr on X (article "How I Made an AI Channel That Generated $12,000 in One Month", May 2026, article ID 2054239999957012480).
 ## Character references
 
-The brand character's poses live in Drive (source of truth), so don't regenerate them. For a NEW recurring character (guest, rival, mascot), build a `character-reference-sheet` pack before the talking-head phase and use its `face_front` / `expr_*` plates as the single reference image for the avatar model.
+The brand character's poses live in Drive (source of truth), so don't regenerate them. For a NEW recurring character (guest, rival, mascot), build a `character-reference-sheet` first. Reference-to-video shots take its full panel `sheet.jpg`. The talking-head avatar model takes ONE image, so use `single_image_ref` (`face_front`) or an `expr_*` plate there.
 
 ## Brand constraints (always apply)
 

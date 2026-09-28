@@ -50,7 +50,7 @@ Do NOT use this to train on real people's likeness or performance without
 their consent, or to synthesize sexual content.
 ## Character references
 
-The identity side of the motion/identity split comes from a `character-reference-sheet` pack: clean, ungraded plates on a neutral backdrop (turnaround, face angles, expressions) to use as the identity reference or the avatar-insertion image, so the motion LoRA never has to carry identity.
+The identity side of the motion/identity split comes from `character-reference-sheet`. For reference-to-video, pass the full panel `sheet.jpg` (`video_ref`). For avatar insertion or any step that maps ONE image onto a pose, use `single_image_ref`, so the motion LoRA never has to carry identity.
 
 ## Prerequisites
 

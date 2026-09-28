@@ -22,7 +22,7 @@ This is a *design* skill, not an API-calling skill. For actually invoking
 providers see `comfyui` and `replicate-api-generation`.
 ## Character references
 
-When a design needs character identity locks, generate them with `character-reference-sheet` (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`). It already encodes one-call-per-item, anchor-first i2i, a no-grade rule for reference plates and numeric QC, and its `manifest.json` `top_refs` maps straight onto each video model's reference cap.
+When a design needs character identity locks, generate them with `character-reference-sheet`. Use the **full panel sheet** (`sheet.jpg`, `~/.hermes/data/character-reference-sheet/<slug>/`, `manifest.json` → `video_ref`) as the character reference, one image per character. Models that take one image of one person (swap, pose transfer, lip-sync avatars) get `single_image_ref`. Budget one reference slot per character.
 
 ## References and scripts
 

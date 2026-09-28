@@ -27,7 +27,7 @@ Deliverables per job: result video + labelled side-by-side
 composites elsewhere; do not auto-composite.
 ## Character references
 
-Build the character image with the `character-reference-sheet` skill instead of using a casual photo. Use its `turn_front` plate (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`) as the Character Reference: a full body on a plain neutral backdrop gives SAM3 a clean cutout when the background box is unticked, and there is no environment for H3 to copy. When the box IS ticked the background comes from the reference, so use a plate composited into the wanted scene instead. Put `manifest.json` → `identity_text` in the Director instruction so text and image describe the same person.
+Build the character with the `character-reference-sheet` skill, but this graph is the exception to its full-sheet default: H3 takes ONE character image, SAM3 has to cut out one person, and with the background box ticked the reference itself becomes the background. Use the single plate `pack/..._turn_front.png` (`manifest.json` → `top_refs`): full body on a plain backdrop, so the cutout is clean and no environment leaks in. Put `identity_text` in the Director instruction.
 
 ## Status
 

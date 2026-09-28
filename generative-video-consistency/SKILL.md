@@ -19,7 +19,7 @@ the loop inside an agent harness**.
 - Reviewing generated assets without burning budget on vision calls
 ## Character references
 
-`character-reference-sheet` is the implementation of sections 1–5 for characters: authored spec as canon, one call per plate, anchor-first i2i, numeric gates (neutrality / uniformity / distinctness) before vision, and a ranked pack of individual plates. Use it to produce every character identity lock rather than rebuilding the procedure per project.
+`character-reference-sheet` implements sections 1–5 for characters: authored spec as canon, one call per plate, anchor-first i2i, and numeric gates before vision. Its output is the identity lock. Use the **full panel sheet** (`sheet.jpg`, `~/.hermes/data/character-reference-sheet/<slug>/`, `manifest.json` → `video_ref`) as the character reference, one image per character. Single-image models (swap / pose-transfer / avatar) take `single_image_ref` instead.
 
 ## 1. Measure everything you can, before you look at anything
 

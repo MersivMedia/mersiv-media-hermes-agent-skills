@@ -309,9 +309,11 @@ def cmd_compose(a, rep=None):
 
 
 def cmd_pack(a, rep=None):
-    """The model-facing pack. The composed sheet is for humans; video models get
-    individual plates, ranked, because a collage as a reference teaches a video
-    model to render a collage and its labels."""
+    """Model-facing outputs. DEFAULT video reference = the full labelled sheet
+    (`video_ref`), one image per character, the way production turnaround sheets
+    are handed to reference-to-video models. The ranked single plates in pack/
+    are for models that take ONE image of ONE person and map it onto a pose or
+    cut it out (H3 swap + SAM3, VACE / Wan Animate, lip-sync avatars)."""
     s = load(a.spec); W = workdir(a.spec)
     rep = rep or (json.loads((W / "qc.json").read_text()) if (W / "qc.json").exists() else {"regenerate": []})
     bad = set(rep.get("regenerate", []))
@@ -333,7 +335,12 @@ def cmd_pack(a, rep=None):
            "costume_canon": s.get("costume"), "palette": s.get("palette"),
            "pack_order": [f"{i:02d}_{k}.png" for i, k in enumerate(order, 1)],
            "top_refs": {"1": order[:1], "3": order[:3], "4": order[:4], "9": order[:9]},
-           "sheet": "sheet.jpg", "qc_pass": rep.get("pass"), "excluded_by_qc": sorted(bad)}
+           "sheet": "sheet.jpg",
+           "video_ref": "sheet.jpg",            # default for reference-to-video models
+           "single_image_ref": f"pack/01_{order[0]}.png" if order else None,
+           "single_image_models": ["h3-swap (SAM3 / bg-from-reference)", "vace", "wan-animate",
+                                   "lip-sync avatar"],
+           "qc_pass": rep.get("pass"), "excluded_by_qc": sorted(bad)}
     (W / "manifest.json").write_text(json.dumps(man, indent=1))
     print(f"pack: {pk}  ({len(order)} plates; top-4 = {order[:4]})")
 

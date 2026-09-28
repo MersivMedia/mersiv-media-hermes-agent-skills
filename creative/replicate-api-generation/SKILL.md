@@ -15,7 +15,7 @@ Reach for this when:
 - The `inference-sh-cli` or `comfyui` skills don't fit because the user specified Replicate as the platform.
 ## Character references
 
-For character sheets or multi-angle identity sets, use the `character-reference-sheet` skill rather than hand-rolling calls: it wraps seedream-4.5 / nano-banana-pro / flux-2-pro i2i with one call per plate, uploads through the files API, asserts the returned count, and composes the sheet with drawn (never generated) text.
+For character sheets or multi-angle identity sets, use the `character-reference-sheet` skill rather than hand-rolling calls: seedream-4.5 / nano-banana-pro / flux-2-pro i2i, one call per plate, files-API upload, returned-count assert, text drawn in code. When a video model takes `reference_images`, pass the full panel `sheet.jpg` as the character reference by default.
 
 ## Pitfall: do NOT use the wrapper packages
 
