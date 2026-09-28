@@ -1,6 +1,6 @@
 # Mersiv Media Hermes Agent Skills
 
-52 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
+53 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
 
 | Skill | Category | What it does |
 |---|---|---|
@@ -8,6 +8,7 @@
 | [`ai-tool-sticky-ads-layout`](ai-tool-sticky-ads-layout/) | `—` | Advanced sticky ad layout for AI tools - vertical sidebars plus smart bottom banner |
 | [`ai-tool-upgrade-checklist`](ai-tool-upgrade-checklist/) | `—` | Systematic checklist for upgrading AI tools from legal template to other domains |
 | [`brand-youtube-pipeline`](brand-video/brand-youtube-pipeline/) | `brand-video` | End-to-end [brand] video production pipeline — takes a NotebookLM-generated video, re-skins slides to dark… |
+| [`character-reference-sheet`](creative/character-reference-sheet/) | `creative` | Build character reference sheets + packs for video. |
 | [`branching-ai-film-engine`](creative/branching-ai-film-engine/) | `creative` | Build live branching AI film engines with audience voting. |
 | [`comfyui`](creative/comfyui/) | `creative` | Generate images, video, and audio with ComfyUI — install, launch, manage nodes/models, run workflows with p… |
 | [`comfyui-video-graph-authoring`](creative/comfyui-video-graph-authoring/) | `creative` | Author and debug ComfyUI video graphs via the REST API. |

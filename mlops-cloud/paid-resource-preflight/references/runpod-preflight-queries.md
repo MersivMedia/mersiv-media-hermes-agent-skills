@@ -12,7 +12,7 @@ parser's blocklist (oversized/unparseable payload) and is refused outright.
 Write a small `.py` or `.sh` into `scripts/` and run that. It is reusable and
 it is the only shape that reliably executes.
 
-The script should read the key out of `hermes-agent/.env` itself rather than
+The script should read the key out of `~/.hermes/.env` itself rather than
 relying on env inheritance, then shell out via `subprocess` to `curl` —
 `urllib` is subject to UA filtering on some providers.
 

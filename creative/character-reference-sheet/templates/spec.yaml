@@ -1,0 +1,77 @@
+# Character reference sheet spec. This file is the canon: every generation
+# prompt is built from it verbatim, and QC checks against it. If a property is
+# not written here, nothing can hold it steady.
+name: __NAME__
+slug: __SLUG__
+
+# fictional   = an invented character (default).
+# real_person = an identifiable real human. Only allowed with consent:
+#   consent: self       (the user themself)
+#   consent: consented  (the person agreed)
+# Celebrities / public figures without consent are refused by build_sheet.py.
+subject_type: fictional
+consent: n/a
+
+model: seedream          # seedream ($0.04, 14 refs) | nano ($0.15, 14 refs) | flux ($0.06, 8 refs)
+
+anchor:
+  from_photo: null       # a photo in this folder to build from (required for real_person)
+
+# One sentence of overall look, used in every prompt.
+look: "a woman in her early thirties with an athletic build"
+
+header: "AI VIDEO PRODUCTION · CHARACTER REFERENCE SHEET"
+
+profile:
+  role: "Field engineer"
+  age: "32"
+  height: "5'7\" (170 cm)"
+  body_type: "Athletic / lean"
+  personality: [focused, dry-humoured, stubborn, loyal]
+  distinctive_traits:
+    - "Short copper-red undercut"
+    - "Freckles across the nose"
+    - "Small scar through the left eyebrow"
+    - "Always wears the brass compass pendant"
+
+face:
+  structure: "Heart-shaped face, high cheekbones, pointed chin"
+  eyes: "Green, almond-shaped"
+  eyebrows: "Straight, medium thickness, scar through the left"
+  nose: "Straight, narrow bridge"
+  lips: "Medium, natural"
+  skin_tone: "Fair with warm undertones, freckles"
+  hair: "Copper-red, short undercut, longer on top swept right"
+  makeup: "None"
+  marks: "Scar through left eyebrow"
+
+costume:
+  summary: "a teal waterproof field jacket with orange piping, charcoal cargo trousers"
+  accessories: ["brass compass pendant on a leather cord", "black fingerless gloves"]
+  footwear: "brown leather lace-up work boots"
+  details:              # each becomes one close-up plate in section 6
+    - {label: "Collar & Piping", describe: "the jacket collar with the orange piping"}
+    - {label: "Pendant", describe: "the brass compass pendant on its leather cord"}
+    - {label: "Gloves", describe: "the black fingerless gloves"}
+    - {label: "Boots", describe: "the brown leather lace-up work boots"}
+
+palette:                 # drawn as swatches; hex is authored, never sampled from a plate
+  - {name: skin, hex: "#F1C9A8"}
+  - {name: hair, hex: "#B5552B"}
+  - {name: jacket, hex: "#1F6F78"}
+  - {name: piping, hex: "#E8742A"}
+  - {name: trousers, hex: "#3A3D42"}
+  - {name: brass, hex: "#B08D3C"}
+
+materials:               # macro swatches in section 7
+  - {label: Skin, describe: "fair freckled skin"}
+  - {label: Hair, describe: "copper-red hair strands"}
+  - {label: Jacket, describe: "teal waterproof nylon fabric"}
+  - {label: Leather, describe: "brown boot leather"}
+  - {label: Brass, describe: "brushed brass metal"}
+
+sheet:                   # trim any list to save cost; defaults shown
+  turnaround: [front, three_quarter, side, back]
+  face: [front, profile, three_quarter]
+  expressions: [neutral, happy, angry, sad, surprised, worried, confident, determined]
+  poses: [neutral_stand, walking, sitting, relaxed, tense, action_ready]

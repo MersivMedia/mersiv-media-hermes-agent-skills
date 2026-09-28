@@ -7,6 +7,7 @@ when_to_use: |
   - User asks for talking-head [character] clips to overlay on existing video
   - User mentions "the pipeline", "process this video", "make a video"
   - Anything touching the [brand] YouTube channel production loop
+related_skills: [character-reference-sheet]
 ---
 
 # [brand] — Video Production Pipeline
@@ -14,6 +15,9 @@ when_to_use: |
 The full process: NotebookLM in → [brand] video out. 8 sequential phases, each with a designated tool/skill. The w1nklerr 4-prompt framework (niche analyst, script engine, metadata, scaling) lives in `templates/` and is invoked from inside this pipeline.
 
 Source attribution: framework adapted from @w1nklerr on X (article "How I Made an AI Channel That Generated $12,000 in One Month", May 2026, article ID 2054239999957012480).
+## Character references
+
+The brand character's poses live in Drive (source of truth), so don't regenerate them. For a NEW recurring character (guest, rival, mascot), build a `character-reference-sheet` pack before the talking-head phase and use its `face_front` / `expr_*` plates as the single reference image for the avatar model.
 
 ## Brand constraints (always apply)
 

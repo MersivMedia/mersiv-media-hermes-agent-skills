@@ -8,7 +8,7 @@ platforms: [linux, macos]
 metadata:
   hermes:
     tags: [image-generation, video-generation, quality-control, verification, character-consistency, vision-subagents, replicate, fal]
-    related_skills: [replicate-api-generation, comfyui, branching-ai-film-engine]
+    related_skills: [replicate-api-generation, comfyui, branching-ai-film-engine, character-reference-sheet]
     category: creative
 ---
 
@@ -31,6 +31,9 @@ to any pipeline that generates visual assets and then consumes them downstream.
 - Before spending on a video render conditioned on generated images
 - Reviewing AI-generated video for drift, continuity, or content accuracy
 - Any time you are about to trust "the model said it succeeded"
+## Character references
+
+`character-reference-sheet` applies this skill's gates to character plates in code (`scripts/rs_qc.py`: white balance on the backdrop, then a luma-only gamma, neutrality ≤12, luma spread ≤20, closest-pair distinctness ≥6, triage into correctable vs must-regenerate). Keep the two in sync when a threshold changes.
 
 ## Linked references
 

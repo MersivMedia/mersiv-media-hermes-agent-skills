@@ -121,7 +121,7 @@ def _call_claude(model: str, system: str, content: list, max_tokens: int = 3000)
     if not key:
         raise RuntimeError(
             "ANTHROPIC_API_KEY is not set in the pod environment. "
-            "Set it in /workspace/secrets.env and restart ComfyUI.")
+            "Set it in /root/secrets.env (container disk, never /workspace) and restart ComfyUI.")
     body = json.dumps({"model": model, "max_tokens": max_tokens,
                        "system": system,
                        "messages": [{"role": "user", "content": content}]}).encode()
@@ -211,5 +211,68 @@ class H3PromptDirector:
             raise RuntimeError(f"H3 Prompt Director declined manual prompt: {verdict}")
 
 
-NODE_CLASS_MAPPINGS = {"H3PromptDirector": H3PromptDirector}
-NODE_DISPLAY_NAME_MAPPINGS = {"H3PromptDirector": "H3 Prompt Director"}
+class H3AudioRoute:
+    """Choose the soundtrack written into the output file.
+
+    MiniMax H3 generates audio JOINTLY with video (one latent), so generation
+    itself can't skip it. This node only decides what ends up in the file:
+      generated  decode H3's own audio track
+      source     the original video's soundtrack (in sync; best for dialogue)
+      off        silent video
+    Both audio inputs are LAZY: in `source`/`off` mode VAEDecodeAudio never
+    runs, and in `generated`/`off` mode the source track is never extracted.
+    """
+
+    CATEGORY = "MiniMax H3/Audio"
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
+    FUNCTION = "route"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mode": (["source", "generated", "off"], {
+                    "default": "source",
+                    "tooltip": "source = original video's soundtrack; generated = H3's audio; off = silent"}),
+            },
+            "optional": {
+                "generated_audio": ("AUDIO", {"lazy": True}),
+                "source_audio": ("AUDIO", {"lazy": True}),
+            },
+        }
+
+    def check_lazy_status(self, mode, generated_audio=None, source_audio=None):
+        if mode == "generated" and generated_audio is None:
+            return ["generated_audio"]
+        if mode == "source" and source_audio is None:
+            return ["source_audio"]
+        return []
+
+    @staticmethod
+    def _plain(a):
+        """VHS hands over a LazyAudioMap; touching it runs ffmpeg. Return a
+        plain dict, or None if the source has no usable audio track."""
+        if a is None:
+            return None
+        try:
+            wf, sr = a["waveform"], a["sample_rate"]
+        except Exception as e:  # no audio stream / ffmpeg failure
+            print(f"[H3AudioRoute] source has no readable audio ({e}); writing silent video")
+            return None
+        if wf is None or getattr(wf, "numel", lambda: 0)() == 0:
+            print("[H3AudioRoute] source audio track is empty; writing silent video")
+            return None
+        return {"waveform": wf, "sample_rate": sr}
+
+    def route(self, mode, generated_audio=None, source_audio=None):
+        if mode == "generated":
+            return (generated_audio,)
+        if mode == "source":
+            return (self._plain(source_audio),)
+        return (None,)
+
+
+NODE_CLASS_MAPPINGS = {"H3PromptDirector": H3PromptDirector, "H3AudioRoute": H3AudioRoute}
+NODE_DISPLAY_NAME_MAPPINGS = {"H3PromptDirector": "H3 Prompt Director",
+                              "H3AudioRoute": "H3 Audio (source / generated / off)"}

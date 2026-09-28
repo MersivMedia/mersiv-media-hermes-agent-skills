@@ -1,6 +1,7 @@
 ---
 name: replicate-api-generation
 description: Generate images and video directly via Replicate REST API — model selection, image-to-image editing, first-frame/last-frame video interpolation, brand-asset iteration workflows. Use when the user asks for AI image/video generation through Replicate (flux, gpt-image, seedance, kling, etc.) or for iterative refinement of brand assets.
+related_skills: [character-reference-sheet]
 ---
 
 # Replicate API: Image & Video Generation
@@ -12,6 +13,9 @@ Reach for this when:
 - User wants iterative image refinement (edit an existing image, not regenerate from scratch).
 - User wants video with controlled start/end frames.
 - The `inference-sh-cli` or `comfyui` skills don't fit because the user specified Replicate as the platform.
+## Character references
+
+For character sheets or multi-angle identity sets, use the `character-reference-sheet` skill rather than hand-rolling calls: it wraps seedream-4.5 / nano-banana-pro / flux-2-pro i2i with one call per plate, uploads through the files API, asserts the returned count, and composes the sheet with drawn (never generated) text.
 
 ## Pitfall: do NOT use the wrapper packages
 

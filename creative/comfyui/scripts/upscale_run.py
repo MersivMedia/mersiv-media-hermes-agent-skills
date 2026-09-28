@@ -21,12 +21,18 @@ import json
 import subprocess
 import sys
 import time
+import os
 from pathlib import Path
 
-HOST = "http://127.0.0.1:8188"
-COMFY_IN = Path("/workspace/ComfyUI/input")
-COMFY_OUT = Path("/workspace/ComfyUI/output")
+HOST = "http://127.0.0.1:8188"   # overridden by --host (e.g. the refswap upscale lane on 8190)
+_ROOT = Path(os.environ.get("REFSWAP_COMFY", "/workspace/ComfyUI"))   # env override = offline tests only
+COMFY_IN = _ROOT / "input"
+COMFY_OUT = _ROOT / "output"
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+# SaveVideo.format is a V3 nested dropdown: sub-inputs are keyed "format.codec".
+# The old flat {"format": "mp4", "codec": "h264"} fails validation on current
+# ComfyUI (seen 2026-09-28: "SaveVideo.execute() missing ... 'format'").
+SAVE_KEYS = {"format": "mp4", "format.codec": "auto", "codec": "auto"}   # shape proven on the pod; auto+mp4 = H.264
 
 
 def http(method, url, payload=None, timeout=120):
@@ -89,10 +95,9 @@ def build_esrgan(a, is_video, fps):
 
     if is_video:
         wf["20"] = {"class_type": "CreateVideo",
-                    "inputs": {"images": out, "fps": float(fps)}}
+                    "inputs": {"images": out, "fps": float(fps), "audio": ["2", 1]}}
         wf["21"] = {"class_type": "SaveVideo",
-                    "inputs": {"video": ["20", 0], "filename_prefix": a.prefix,
-                               "format": "mp4", "codec": "h264"}}
+                    "inputs": {"video": ["20", 0], "filename_prefix": a.prefix, **SAVE_KEYS}}
     else:
         wf["20"] = {"class_type": "SaveImage",
                     "inputs": {"images": out, "filename_prefix": a.prefix}}
@@ -101,8 +106,10 @@ def build_esrgan(a, is_video, fps):
 
 def build_seedvr2(a, fps, info):
     """Temporal diffusion upscale. Video only."""
-    tw = int(info["width"] * a.scale)
-    th = int(info["height"] * a.scale)
+    if a.target_height:
+        a.scale = a.target_height / info["height"]
+    tw = round(info["width"] * a.scale)
+    th = round(info["height"] * a.scale)
     tw -= tw % 16
     th -= th % 16
 
@@ -151,16 +158,17 @@ def build_seedvr2(a, fps, info):
                "inputs": {"images": ["12", 0],
                           "original_resized_images": ["3", 0],
                           "color_correction_method": a.color_correction}},
+        # audio passes straight through from the input clip
         "20": {"class_type": "CreateVideo",
-               "inputs": {"images": ["13", 0], "fps": float(fps)}},
+               "inputs": {"images": ["13", 0], "fps": float(fps), "audio": ["2", 1]}},
         "21": {"class_type": "SaveVideo",
-               "inputs": {"video": ["20", 0], "filename_prefix": a.prefix,
-                          "format": "mp4", "codec": "h264"}},
+               "inputs": {"video": ["20", 0], "filename_prefix": a.prefix, **SAVE_KEYS}},
     }
     return wf
 
 
 def main():
+    global HOST
     ap = argparse.ArgumentParser(description="Standalone image/video upscaler")
     ap.add_argument("--input", required=True,
                     help="path on the POD (or a bare filename already in input/)")
@@ -181,7 +189,12 @@ def main():
     ap.add_argument("--prefix", default="upscaled")
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--save-only")
+    ap.add_argument("--host", default=HOST, help="ComfyUI base URL (default %(default)s)")
+    ap.add_argument("--target-height", type=int, default=0,
+                    help="seedvr2: exact output height (overrides --scale), e.g. 1440 or 2160")
+    ap.add_argument("--result-json", help="write the final result JSON here")
     a = ap.parse_args()
+    HOST = a.host.rstrip("/")
 
     src = Path(a.input)
     if src.is_absolute() or src.exists():
@@ -214,7 +227,10 @@ def main():
           f"{info['frames']}f @{fps}")
     print(f"engine: {engine}")
     if engine == "seedvr2":
-        print(f"target: ~{int(info['width']*a.scale)}x{int(info['height']*a.scale)}")
+        s = (a.target_height / info["height"]) if a.target_height else a.scale
+        tw, th = round(info["width"] * s), round(info["height"] * s)
+        a._target = [tw - tw % 16, th - th % 16]
+        print(f"target: {a._target[0]}x{a._target[1]}  ({s:.2f}x)")
 
     wf = (build_seedvr2(a, fps, info) if engine == "seedvr2"
           else build_esrgan(a, is_video, fps))
@@ -246,9 +262,19 @@ def main():
             outs = [it for nd in (e.get("outputs") or {}).values()
                     for k in ("videos", "gifs", "images")
                     for it in (nd.get(k) or [])]
-            print(json.dumps({"prompt_id": pid,
-                              "seconds": round(time.time()-t0),
-                              "outputs": outs}, indent=2))
+            msgs = {m[0]: m[1].get("timestamp") for m in (e.get("status") or {}).get("messages", [])
+                    if isinstance(m[1], dict)}
+            exec_s = None
+            if msgs.get("execution_start") and msgs.get("execution_success"):
+                exec_s = round((msgs["execution_success"] - msgs["execution_start"]) / 1000, 1)
+            result = {"prompt_id": pid, "seconds": round(time.time()-t0),
+                      "exec_seconds": exec_s, "outputs": outs,
+                      "exec_start_epoch": (msgs.get("execution_start") or 0) / 1000,
+                      "exec_end_epoch": (msgs.get("execution_success") or 0) / 1000,
+                      "target": [tw_th for tw_th in [getattr(a, "_target", None)] if tw_th]}
+            print(json.dumps(result, indent=2))
+            if a.result_json:
+                Path(a.result_json).write_text(json.dumps(result, indent=1))
             return
         el = round(time.time() - t0)
         if el % 60 < 11:

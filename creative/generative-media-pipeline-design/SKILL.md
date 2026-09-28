@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [architecture, generative-video, prd, latency, cost-modelling, state-machine, continuity]
-    related_skills: [comfyui, replicate-api-generation, writing-plans, spike]
+    related_skills: [comfyui, replicate-api-generation, writing-plans, spike, character-reference-sheet]
     category: creative
 ---
 
@@ -20,6 +20,9 @@ anything where **latency, per-run cost, and visual continuity** all bind at once
 
 This is a *design* skill, not an API-calling skill. For actually invoking
 providers see `comfyui` and `replicate-api-generation`.
+## Character references
+
+When a design needs character identity locks, generate them with `character-reference-sheet` (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`). It already encodes one-call-per-item, anchor-first i2i, a no-grade rule for reference plates and numeric QC, and its `manifest.json` `top_refs` maps straight onto each video model's reference cap.
 
 ## References and scripts
 

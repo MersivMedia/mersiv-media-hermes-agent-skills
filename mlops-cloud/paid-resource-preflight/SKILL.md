@@ -30,7 +30,7 @@ where your notes may be stale.
 
 ## Prerequisites
 
-Provider credentials already in `hermes-agent/.env` (chmod 600). Read-only API
+Provider credentials already in `~/.hermes/.env` (chmod 600). Read-only API
 access is enough for every step here — nothing in this skill spends money.
 
 ## Procedure

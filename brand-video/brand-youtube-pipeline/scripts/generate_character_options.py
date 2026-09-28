@@ -4,7 +4,7 @@
 Parallel submission, polling with shared deadline. Saves to
 ~/.hermes/data/brand-youtube-pipeline/character-options/
 
-Requires REPLICATE_API_TOKEN in env (source from hermes-agent/.env).
+Requires REPLICATE_API_TOKEN in env (source from ~/.hermes/.env).
 
 USAGE:
   set -a; source ~/.hermes/.env; set +a

@@ -17,7 +17,7 @@ metadata:
       - comfyui
       - ltx
       - wan
-    related_skills: [comfyui, generative-video-consistency, generative-media-pipeline-design, seedance-video]
+    related_skills: [comfyui, generative-video-consistency, generative-media-pipeline-design, seedance-video, character-reference-sheet]
     category: creative
 ---
 
@@ -48,6 +48,9 @@ only when conditioning genuinely cannot express the motion.
 
 Do NOT use this to train on real people's likeness or performance without
 their consent, or to synthesize sexual content.
+## Character references
+
+The identity side of the motion/identity split comes from a `character-reference-sheet` pack: clean, ungraded plates on a neutral backdrop (turnaround, face angles, expressions) to use as the identity reference or the avatar-insertion image, so the motion LoRA never has to carry identity.
 
 ## Prerequisites
 

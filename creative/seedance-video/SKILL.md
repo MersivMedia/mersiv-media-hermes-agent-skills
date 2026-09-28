@@ -18,7 +18,7 @@ metadata:
       - text-to-video
       - image-to-video
       - audio
-    related_skills: [replicate-api-generation, generative-video-consistency, comfyui]
+    related_skills: [replicate-api-generation, generative-video-consistency, comfyui, character-reference-sheet]
     category: creative
 ---
 
@@ -43,6 +43,9 @@ wrapper that bills a remote service, not a local checkpoint.
 
 Use `comfyui` with open-weight models (LTX-2.5, Wan) instead when the work
 must run locally, needs custom nodes, or must avoid per-generation billing.
+## Character references
+
+For character locks, build a `character-reference-sheet` pack first (`~/.hermes/data/character-reference-sheet/<slug>/pack/` + `manifest.json`). Pass `manifest.json` → `top_refs["9"]` as seedance-2.0 `reference_images` (`top_refs["4"]` for seedance-1-lite), in rank order; with several characters, round-robin across their packs within the cap. Never pass the composed `sheet.jpg`: a collage as a reference teaches the model to render collage panels and labels.
 
 ## Prerequisites
 

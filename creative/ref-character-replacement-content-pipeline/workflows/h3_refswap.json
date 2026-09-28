@@ -1,8 +1,8 @@
 {
  "id": "e3f2b845-8f2c-4b5a-9caf-eac1029d3e7e",
  "revision": 0,
- "last_node_id": 162,
- "last_link_id": 318,
+ "last_node_id": 163,
+ "last_link_id": 321,
  "nodes": [
   {
    "id": 92,
@@ -47,13 +47,7 @@
     "auto",
     "auto",
     "auto"
-   ],
-   "widgets_values_named": {
-    "filename_prefix": "video/MiniMax_H3",
-    "format": "auto",
-    "format.codec": "auto",
-    "codec": "auto"
-   }
+   ]
   },
   {
    "id": 115,
@@ -87,7 +81,7 @@
      ]
     }
    ],
-   "title": "Resolution Selector (Size)",
+   "title": "Resolution (0.98 MP = 768p, 0.4 MP = 480p)",
    "properties": {
     "cnr_id": "comfy-core",
     "ver": "0.33.0",
@@ -100,14 +94,9 @@
    },
    "widgets_values": [
     "16:9 (Widescreen)",
-    0.4,
+    0.98,
     32
    ],
-   "widgets_values_named": {
-    "aspect_ratio": "16:9 (Widescreen)",
-    "megapixels": 0.4,
-    "multiple": 32
-   },
    "color": "#322",
    "bgcolor": "#533"
   },
@@ -155,10 +144,7 @@
    },
    "widgets_values": [
     "minimax_h3_video_vae_int8_convrot.safetensors"
-   ],
-   "widgets_values_named": {
-    "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
-   }
+   ]
   },
   {
    "id": 120,
@@ -204,10 +190,7 @@
    },
    "widgets_values": [
     "minimax_h3_audio_vae_fp32.safetensors"
-   ],
-   "widgets_values_named": {
-    "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
-   }
+   ]
   },
   {
    "id": 121,
@@ -242,7 +225,7 @@
      "name": "AUDIO",
      "type": "AUDIO",
      "links": [
-      259
+      319
      ]
     }
    ],
@@ -341,10 +324,7 @@
    },
    "widgets_values": [
     "res_multistep"
-   ],
-   "widgets_values_named": {
-    "sampler_name": "res_multistep"
-   }
+   ]
   },
   {
    "id": 124,
@@ -400,12 +380,7 @@
     "simple",
     20,
     1
-   ],
-   "widgets_values_named": {
-    "scheduler": "simple",
-    "steps": 20,
-    "denoise": 1
-   }
+   ]
   },
   {
    "id": 125,
@@ -566,11 +541,7 @@
    "widgets_values": [
     "minimax_h3_ref2va_int8_convrot.safetensors",
     "default"
-   ],
-   "widgets_values_named": {
-    "unet_name": "minimax\\10Eros_Max_h3_TURBO_ref2va_beta2_int8_convrot.safetensors",
-    "weight_dtype": "default"
-   }
+   ]
   },
   {
    "id": 128,
@@ -592,8 +563,7 @@
      "name": "CLIP",
      "type": "CLIP",
      "links": [
-      272,
-      299
+      272
      ]
     }
    ],
@@ -618,12 +588,7 @@
     "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
     "minimax",
     "default"
-   ],
-   "widgets_values_named": {
-    "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
-    "type": "minimax",
-    "device": "default"
-   }
+   ]
   },
   {
    "id": 129,
@@ -662,11 +627,7 @@
    "widgets_values": [
     261662374822964,
     "randomize"
-   ],
-   "widgets_values_named": {
-    "noise_seed": 261662374822964,
-    "control_after_generate": "randomize"
-   }
+   ]
   },
   {
    "id": 130,
@@ -692,7 +653,7 @@
      "name": "audio",
      "shape": 7,
      "type": "AUDIO",
-     "link": 259
+     "link": 321
     }
    ],
    "outputs": [
@@ -719,13 +680,7 @@
     8,
     "sRGB",
     "none"
-   ],
-   "widgets_values_named": {
-    "fps": 24,
-    "bit_depth": 8,
-    "color_space": "sRGB",
-    "codec": "none"
-   }
+   ]
   },
   {
    "id": 131,
@@ -788,10 +743,7 @@
    },
    "widgets_values": [
     "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17"
-   ],
-   "widgets_values_named": {
-    "expression": "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17"
-   }
+   ]
   },
   {
    "id": 132,
@@ -832,9 +784,6 @@
    "widgets_values": [
     5
    ],
-   "widgets_values_named": {
-    "value": 5
-   },
    "color": "#322",
    "bgcolor": "#533"
   },
@@ -1010,14 +959,7 @@
     768,
     124,
     "match"
-   ],
-   "widgets_values_named": {
-    "prompt": "",
-    "width": 1344,
-    "height": 768,
-    "length": 124,
-    "ref_image_size": "match"
-   }
+   ]
   },
   {
    "id": 137,
@@ -1065,10 +1007,6 @@
     "character.png",
     "image"
    ],
-   "widgets_values_named": {
-    "image": "red_superboy_on_city_roof.png",
-    "upload": "image"
-   },
    "title": "Character Reference"
   },
   {
@@ -1098,9 +1036,6 @@
    "widgets_values": [
     "| megapixels | Aspect | Output (multiple=32) |\n|---|---|---|\n| 0.2 | 16:9 | 608 x 352 |\n| 0.3 | 16:9 | 736 x 416 |\n| 0.4 | 16:9 | 864 x 480 |\n| 0.5 | 16:9 | 960 x 544 |\n| 0.6 | 16:9 | 1056 x 608 |\n| 0.7 | 16:9 | 1152 x 640 |\n| 0.8 | 16:9 | 1216 x 672 |\n| 0.9 | 16:9 | 1280 x 736 |\n| 0.98 | 16:9 | 1344 x 768 (official 768p) |"
    ],
-   "widgets_values_named": {
-    "text": "| megapixels | Aspect | Output (multiple=32) |\n|---|---|---|\n| 0.2 | 16:9 | 608 x 352 |\n| 0.3 | 16:9 | 736 x 416 |\n| 0.4 | 16:9 | 864 x 480 |\n| 0.5 | 16:9 | 960 x 544 |\n| 0.6 | 16:9 | 1056 x 608 |\n| 0.7 | 16:9 | 1152 x 640 |\n| 0.8 | 16:9 | 1216 x 672 |\n| 0.9 | 16:9 | 1280 x 736 |\n| 0.98 | 16:9 | 1344 x 768 (official 768p) |"
-   },
    "color": "#222",
    "bgcolor": "#000"
   },
@@ -1164,10 +1099,7 @@
    },
    "widgets_values": [
     false
-   ],
-   "widgets_values_named": {
-    "switch": false
-   }
+   ]
   },
   {
    "id": 142,
@@ -1229,10 +1161,7 @@
    },
    "widgets_values": [
     false
-   ],
-   "widgets_values_named": {
-    "switch": false
-   }
+   ]
   },
   {
    "id": 143,
@@ -1272,11 +1201,7 @@
    "widgets_values": [
     20,
     "fixed"
-   ],
-   "widgets_values_named": {
-    "value": 20,
-    "fixed": "fixed"
-   }
+   ]
   },
   {
    "id": 144,
@@ -1316,11 +1241,7 @@
    "widgets_values": [
     4,
     "fixed"
-   ],
-   "widgets_values_named": {
-    "value": 4,
-    "fixed": "fixed"
-   }
+   ]
   },
   {
    "id": 145,
@@ -1372,11 +1293,7 @@
    "widgets_values": [
     "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
     1
-   ],
-   "widgets_values_named": {
-    "lora_name": "Minimax\\minimax_h3_fl2v_turbo_8step_v1.0_768p_bf16.safetensors",
-    "strength_model": 1
-   }
+   ]
   },
   {
    "id": 146,
@@ -1417,9 +1334,6 @@
    "widgets_values": [
     false
    ],
-   "widgets_values_named": {
-    "value": false
-   },
    "color": "#322",
    "bgcolor": "#533"
   },
@@ -1547,7 +1461,9 @@
      "label": "audio",
      "name": "audio",
      "type": "AUDIO",
-     "links": null
+     "links": [
+      320
+     ]
     },
     {
      "label": "video_info",
@@ -1570,32 +1486,6 @@
     "video": "source.mp4",
     "force_rate": 0,
     "custom_width": 0,
-    "custom_height": 0,
-    "frame_load_cap": 0,
-    "skip_first_frames": 0,
-    "select_every_nth": 1,
-    "format": "AnimateDiff",
-    "choose video to upload": "image",
-    "videopreview": {
-     "paused": false,
-     "hidden": true,
-     "params": {
-      "custom_height": 0,
-      "force_rate": 0,
-      "custom_width": 0,
-      "select_every_nth": 1,
-      "frame_load_cap": 0,
-      "skip_first_frames": 0,
-      "filename": "MNWDHRS6S3WK06R0XXB5QN2WM0.mp4",
-      "type": "input",
-      "format": "video/mp4"
-     }
-    }
-   },
-   "widgets_values_named": {
-    "video": "MNWDHRS6S3WK06R0XXB5QN2WM0.mp4",
-    "force_rate": 0,
-    "custom_width": 640,
     "custom_height": 0,
     "frame_load_cap": 0,
     "skip_first_frames": 0,
@@ -1655,9 +1545,6 @@
    "widgets_values": [
     "Superseded by H3 Prompt Director."
    ],
-   "widgets_values_named": {
-    "value": "subject_definitions: <Subject 1> is the original performer in <Video 1>, shown in <Picture 1>: a blonde woman of mid-age wearing a white towel wrap dress. Only this performer's body position, pose, movement, and timing are used in the target video.<Subject 2> is a young woman as shown in <Picture 2>, featuring long straight black hair with blunt bangs, heavy dark eye makeup and dark lips, a slender build, wearing a black off-the-shoulder top tied at the bust, a black choker necklace, and multiple silver cross pendants; she also wears small earrings. <Video 1> is the source video of a performance in a girly bedroom setting, and is the video being edited; its camera framing, camera motion, environment, and full choreography timing are the fixed structure that must be preserved exactly.\n\nretention_analysis: <Video 1> (camera framing, camera motion, environment, background, lighting, choreography and timing): fully_preserved - The single continuous shot structure, the specific bedroom setting, and all temporal beats are kept exactly. <Subject 1> (appears throughout [Shot 1]): partially_preserved - body position, pose, movement path, gestures, and timing are kept exactly; the entire appearance is replaced by <Subject 2>. <Subject 2> (appears throughout [Shot 1]): attribute_transfer - a young woman's long black hair, dark makeup, black off-the-shoulder top, choker, and cross pendants replace <Subject 1>'s visual identity, mapped exactly onto the same body position, pose, and movement at every moment.\n\ndetailed_description: The target video is a strict character-only edit of <Video 1>, presented in a photorealistic live-action rendition that matches the warm lighting and domestic feel of the source material, playing out as the same single continuous shot. The background remains the girly bedroom with neon signs and posters from <Picture 2>. [Shot 1] At the start of the clip, <Subject 2>, wearing her black off-the-shoulder top and cross necklaces, occupies the exact position and body line of the source performer. She begins to slowly lift the fabric of her top, maintaining the original pose and timing from <Video 1>. Around the one-second mark, she quickly throws her top to the right side of the frame, leaving herself completely naked except for the cross necklace around her neck, exactly as in the source video. From this point onward, she places both hands onto her large breasts and begins massaging them with the identical pose and timing as the original performer. This action continues until approximately the eight-second mark. At 00:08, <Subject 2> turns to the side, maintaining the exact body line of the source video, presenting her naked side and large ass. Throughout all movements, the black choker remains tight around her neck, and the silver cross pendants swing naturally with her torso movement. The camera maintains a static shot throughout the entire clip, matching <Video 1>. <Subject 2> is the only person in the frame for the entire clip, and the background stays empty of people.\n\noverall_soundscape: The soundscape includes soft fabric rustling as she moves and subtle skin sounds during the massage, complemented by a quiet room tone appropriate for an intimate bedroom setting.\n\nnon_diegetic_music: N/A"
-   },
    "title": "(unused) original hardcoded prompt"
   },
   {
@@ -1734,8 +1621,8 @@
   },
   {
    "id": 152,
-   "type": "UNETLoader",
-   "title": "SAM3 model",
+   "type": "CheckpointLoaderSimple",
+   "title": "SAM3 model (+ its own CLIP)",
    "pos": [
     -605.6061583765809,
     5977.494501449486
@@ -1748,7 +1635,7 @@
    "order": 0,
    "mode": 0,
    "properties": {
-    "Node name for S&R": "UNETLoader"
+    "Node name for S&R": "CheckpointLoaderSimple"
    },
    "inputs": [],
    "outputs": [
@@ -1758,11 +1645,22 @@
      "links": [
       297
      ]
+    },
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      299
+     ]
+    },
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": []
     }
    ],
    "widgets_values": [
-    "sam3.1_multiplex_fp16.safetensors",
-    "default"
+    "sam3.1_multiplex_fp16.safetensors"
    ]
   },
   {
@@ -2207,6 +2105,51 @@
   },
   {
    "id": 162,
+   "type": "H3AudioRoute",
+   "title": "Audio: source / generated / off",
+   "pos": [
+    -50,
+    5690
+   ],
+   "size": [
+    340,
+    90
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "properties": {
+    "Node name for S&R": "H3AudioRoute"
+   },
+   "inputs": [
+    {
+     "name": "generated_audio",
+     "type": "AUDIO",
+     "link": 319,
+     "shape": 7
+    },
+    {
+     "name": "source_audio",
+     "type": "AUDIO",
+     "link": 320,
+     "shape": 7
+    }
+   ],
+   "outputs": [
+    {
+     "name": "audio",
+     "type": "AUDIO",
+     "links": [
+      321
+     ]
+    }
+   ],
+   "widgets_values": [
+    "source"
+   ]
+  },
+  {
+   "id": 163,
    "type": "MarkdownNote",
    "title": "HOW TO RUN",
    "pos": [
@@ -2226,7 +2169,7 @@
    "inputs": [],
    "outputs": [],
    "widgets_values": [
-    "## Ref Character Replacement (MiniMax H3)\n\n1. **Source Video** - the clip to edit (2-15 s).\n2. **Character Reference** - one image of the new character.\n3. **Replace background?**\n   - **off** - character is cut out with SAM3 and put on grey, so the reference's environment cannot leak in. The video keeps its own background.\n   - **on** - the reference's environment replaces the video's background.\n4. **H3 Prompt Director** - type a plain instruction.\n5. **Float (Duration)** - seconds to render, <= source length and <= 15.\n6. Queue. Read the generated prompt in the preview node; check *Character image H3 will see* to confirm the cutout.\n\nHand-write a prompt via the Director's `manual_override`.\n\n**Rules:** no sexual/nude content; real identifiable people only with consent. Enforced inside the node."
+    "## Ref Character Replacement (MiniMax H3)\n\n1. **Source Video** - the clip to edit (2-15 s).\n2. **Character Reference** - one image of the new character.\n3. **Replace background?**\n   - **off** - character is cut out with SAM3 and put on grey, so the reference's environment cannot leak in. The video keeps its own background.\n   - **on** - the reference's environment replaces the video's background.\n4. **H3 Prompt Director** - type a plain instruction.\n5. **Float (Duration)** - seconds to render, <= source length and <= 15.\n6. **Audio** - `source` keeps the original soundtrack (default), `generated` uses H3's audio, `off` is silent.\n7. **Enable Lightning LoRA** - on = 4-step turbo (~4x faster).\n8. Queue. Read the generated prompt in the preview node; check *Character image H3 will see* to confirm the cutout.\n\nHand-write a prompt via the Director's `manual_override`.\n\n**Rules:** no sexual/nude content; real identifiable people only with consent. Enforced inside the node."
    ]
   }
  ],
@@ -2294,14 +2237,6 @@
    130,
    0,
    "IMAGE"
-  ],
-  [
-   259,
-   121,
-   0,
-   130,
-   1,
-   "AUDIO"
   ],
   [
    270,
@@ -2505,8 +2440,8 @@
   ],
   [
    299,
-   128,
-   0,
+   152,
+   1,
    153,
    0,
    "CLIP"
@@ -2662,6 +2597,30 @@
    136,
    14,
    "STRING"
+  ],
+  [
+   319,
+   121,
+   0,
+   162,
+   0,
+   "AUDIO"
+  ],
+  [
+   320,
+   148,
+   2,
+   162,
+   1,
+   "AUDIO"
+  ],
+  [
+   321,
+   162,
+   0,
+   130,
+   1,
+   "AUDIO"
   ]
  ],
  "groups": [

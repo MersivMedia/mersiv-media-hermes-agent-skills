@@ -124,8 +124,12 @@ cb = add("PrimitiveBoolean", "Replace background?  (on = use character's backgro
          (cx, cy - 170), [], [("BOOLEAN", "BOOLEAN")], [False], size=(420, 60))
 
 # ---- SAM3 cutout branch -----------------------------------------------------
-sam_loader = add("UNETLoader", "SAM3 model", (cx + 380, cy - 40), [],
-                 [("MODEL", "MODEL")], [SAM3_MODEL, "default"])
+# SAM3 must load as a CHECKPOINT: that returns its own 1024-dim CLIP text
+# encoder alongside the model. Encoding "person" with H3's Qwen3-VL gives
+# 5120-dim embeddings -> "mat1 and mat2 shapes cannot be multiplied
+# (1x5120 and 1024x256)". The file is symlinked into models/checkpoints/.
+sam_loader = add("CheckpointLoaderSimple", "SAM3 model (+ its own CLIP)", (cx + 380, cy - 40), [],
+                 [("MODEL", "MODEL"), ("CLIP", "CLIP"), ("VAE", "VAE")], [SAM3_MODEL])
 sam_cond = add("CLIPTextEncode", "SAM3 target: person", (cx + 380, cy + 110),
                [{"name": "clip", "type": "CLIP", "link": None}],
                [("CONDITIONING", "CONDITIONING")], ["person"])
@@ -158,7 +162,7 @@ sw = add("ComfySwitchNode", "Character image H3 will see", (cx + 1420, cy + 60),
 
 link(sam_loader, 0, sam, 0, "MODEL")
 link(CHAR, 0, sam, 1, "IMAGE")
-link(128, 0, sam_cond, 0, "CLIP")            # H3's text encoder only tokenizes "person"
+link(sam_loader, 1, sam_cond, 0, "CLIP")     # SAM3's OWN text encoder, never H3's
 link(sam_cond, 0, sam, 2, "CONDITIONING")
 link(sam, 0, grow, 0, "MASK")
 link(CHAR, 0, size, 0, "IMAGE")
@@ -197,6 +201,28 @@ link(ff, 0, H3, slot(H3, "ref_images.ref_image_0"), "IMAGE")
 link(sw, 0, H3, slot(H3, "ref_images.ref_image_1"), "IMAGE")
 link(pd, 0, H3, slot(H3, "prompt"), "STRING")
 
+# ---- audio mode: source / generated / off ----------------------------------
+# H3 makes audio jointly with video; this only picks what lands in the file.
+# Lazy inputs: in `source`/`off` mode VAEDecodeAudio (121) never executes.
+CREATE, DEC_AUDIO = 130, 121
+old_audio = nodes[CREATE]["inputs"][slot(CREATE, "audio")].get("link")
+if old_audio is not None:
+    unlink(old_audio)
+ar = add("H3AudioRoute", "Audio: source / generated / off",
+         (nodes[CREATE]["pos"][0] - 380, nodes[CREATE]["pos"][1] + 40),
+         [{"name": "generated_audio", "type": "AUDIO", "link": None, "shape": 7},
+          {"name": "source_audio", "type": "AUDIO", "link": None, "shape": 7}],
+         [("audio", "AUDIO")], ["source"], size=(340, 90))
+link(DEC_AUDIO, 0, ar, 0, "AUDIO")
+link(VID, 2, ar, 1, "AUDIO")                # VHS_LoadVideo output 2 = source audio
+link(ar, 0, CREATE, slot(CREATE, "audio"), "AUDIO")
+
+# ---- resolution: 768p default (H3's local max, 1344x768 at 16:9) -------------
+# ResolutionSelector: 0.98 MP @16:9, multiple 32 -> 1344x768; 0.4 -> 864x480.
+# Batch runs override H3's width/height directly from the SOURCE aspect.
+nodes[115]["widgets_values"] = ["16:9 (Widescreen)", 0.98, 32]
+nodes[115]["title"] = "Resolution (0.98 MP = 768p, 0.4 MP = 480p)"
+
 # ---- instructions -----------------------------------------------------------
 add("MarkdownNote", "HOW TO RUN", (nodes[VID]["pos"][0], nodes[VID]["pos"][1] - 520), [], [], [
     "## Ref Character Replacement (MiniMax H3)\n\n"
@@ -208,7 +234,10 @@ add("MarkdownNote", "HOW TO RUN", (nodes[VID]["pos"][0], nodes[VID]["pos"][1] - 
     "   - **on** - the reference's environment replaces the video's background.\n"
     "4. **H3 Prompt Director** - type a plain instruction.\n"
     "5. **Float (Duration)** - seconds to render, <= source length and <= 15.\n"
-    "6. Queue. Read the generated prompt in the preview node; check "
+    "6. **Audio** - `source` keeps the original soundtrack (default), "
+    "`generated` uses H3's audio, `off` is silent.\n"
+    "7. **Enable Lightning LoRA** - on = 4-step turbo (~4x faster).\n"
+    "8. Queue. Read the generated prompt in the preview node; check "
     "*Character image H3 will see* to confirm the cutout.\n\n"
     "Hand-write a prompt via the Director's `manual_override`.\n\n"
     "**Rules:** no sexual/nude content; real identifiable people only with consent. "
@@ -216,6 +245,15 @@ add("MarkdownNote", "HOW TO RUN", (nodes[VID]["pos"][0], nodes[VID]["pos"][1] - 
 
 wf["last_node_id"] = state["node"] - 1
 wf["last_link_id"] = state["link"] - 1
+# widgets_values_named is a stale export-time copy of widget values that nothing
+# reads (ComfyUI uses widgets_values). The supplied workflow's copy still held the
+# third-party NSFW finetune filename and the original explicit example prompt
+# after both were replaced, and a public release shipped them. Drop it every build.
+for n in wf["nodes"]:
+    n.pop("widgets_values_named", None)
+_blob = json.dumps(wf)
+for banned in ("Eros", "towel"):
+    assert banned not in _blob, f"banned string {banned!r} still in workflow"
 json.dump(wf, open(OUT, "w"), indent=1)
 print(f"wrote {OUT}: {len(wf['nodes'])} nodes, {len(links)} links")
 print(f"ids: checkbox={cb} switch={sw} director={pd} sam={sam} composite={comp} first_frame={ff}")

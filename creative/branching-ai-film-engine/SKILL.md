@@ -8,7 +8,7 @@ platforms: [linux, macos]
 metadata:
   hermes:
     tags: [video-generation, interactive-film, replicate, showrunner, character-consistency, speculative-rendering]
-    related_skills: [replicate-api-generation, comfyui]
+    related_skills: [replicate-api-generation, comfyui, character-reference-sheet]
     category: creative
 ---
 
@@ -32,6 +32,9 @@ or `comfyui` directly instead.
 The premise that makes it possible is that generative video is now **faster than
 playback**, so the viewer never waits on a model. Every design decision below serves
 two goals: **hide latency** and **prevent narrative drift**.
+## Character references
+
+Pre-production character locks come from `character-reference-sheet`: one spec per character (the canon file the Showrunner reads), one pack per character. Every `ref2v` shot takes its identity refs from `manifest.json` → `top_refs` sized to the model's cap, and its `identity_text` goes into the shot prompt.
 
 ## 1. Verify model limits BEFORE writing any spec
 

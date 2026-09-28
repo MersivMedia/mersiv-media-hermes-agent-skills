@@ -31,6 +31,8 @@ def post(path, body):
 
 wf_path, replace_bg, instruction = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
 duration = float(sys.argv[4]) if len(sys.argv) > 4 else 5.0
+# Turbo = the ref2v 4-step LoRA path (the workflow's "Enable Lightning LoRA" toggle).
+TURBO = (sys.argv[5] == "1") if len(sys.argv) > 5 else False
 
 ui = json.load(open(wf_path))
 info = get("/object_info")
@@ -59,19 +61,34 @@ for n in ui["nodes"]:
                 inputs[k] = v
     else:
         wv = list(wv or [])
-        i = 0
-        for name, s in order:
-            typ = s[0]
-            is_widget = isinstance(typ, list) or typ in ("INT", "FLOAT", "STRING", "BOOLEAN", "COMBO")
-            if not is_widget:
-                continue
-            if i >= len(wv):
-                break
-            inputs[name] = wv[i]
-            i += 1
-            # seed-style INTs carry a trailing "control_after_generate" widget
-            if typ == "INT" and i < len(wv) and wv[i] in ("fixed", "randomize", "increment", "decrement"):
-                i += 1
+        pos = [0]
+
+        def consume(spec_items, prefix=""):
+            for name, s in spec_items:
+                typ = s[0]
+                opts = s[1] if len(s) > 1 else {}
+                if typ == "COMFY_DYNAMICCOMBO_V3":
+                    # V3 nested dropdown: value selects an option, whose own
+                    # inputs follow in the widget list and are keyed "parent.child".
+                    if pos[0] >= len(wv):
+                        return
+                    val = wv[pos[0]]; pos[0] += 1
+                    inputs[prefix + name] = val
+                    chosen = next((o for o in opts.get("options", []) if o.get("key") == val), None)
+                    sub = ((chosen or {}).get("inputs") or {}).get("required") or {}
+                    consume(list(sub.items()), prefix + name + ".")
+                    continue
+                is_widget = isinstance(typ, list) or typ in ("INT", "FLOAT", "STRING", "BOOLEAN", "COMBO")
+                if not is_widget:
+                    continue
+                if pos[0] >= len(wv):
+                    return
+                inputs[prefix + name] = wv[pos[0]]; pos[0] += 1
+                # seed-style INTs carry a trailing "control_after_generate" widget
+                if typ == "INT" and pos[0] < len(wv) and wv[pos[0]] in ("fixed", "randomize", "increment", "decrement"):
+                    pos[0] += 1
+
+        consume(order)
     inputs.update(linked)
     api[str(n["id"])] = {"class_type": t, "inputs": inputs}
 
@@ -88,6 +105,8 @@ for nid, n in api.items():
         n["inputs"]["value"] = replace_bg
     if t == "PrimitiveFloat" and "Duration" in (next(x for x in ui["nodes"] if str(x["id"]) == nid).get("title", "")):
         n["inputs"]["value"] = duration
+    if t == "PrimitiveBoolean" and "Lightning" in (next(x for x in ui["nodes"] if str(x["id"]) == nid).get("title", "")):
+        n["inputs"]["value"] = TURBO
 
 json.dump(api, open("/root/last_api.json", "w"), indent=1)
 cid = str(uuid.uuid4())

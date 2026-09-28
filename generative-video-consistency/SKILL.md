@@ -1,6 +1,7 @@
 ---
 name: generative-video-consistency
 description: Use when building or operating a generative video pipeline that must hold character, wardrobe, location and geometry consistent across many shots. Covers reference locks, numeric QC gates, mode discipline, and the agent-harness split between live rendering and offline improvement.
+related_skills: [character-reference-sheet]
 ---
 
 # Generative Video Consistency
@@ -16,6 +17,9 @@ the loop inside an agent harness**.
 - Character identity, wardrobe or backdrop drifts between clips
 - Deciding what an agent should automate and what it must never touch
 - Reviewing generated assets without burning budget on vision calls
+## Character references
+
+`character-reference-sheet` is the implementation of sections 1–5 for characters: authored spec as canon, one call per plate, anchor-first i2i, numeric gates (neutrality / uniformity / distinctness) before vision, and a ranked pack of individual plates. Use it to produce every character identity lock rather than rebuilding the procedure per project.
 
 ## 1. Measure everything you can, before you look at anything
 
