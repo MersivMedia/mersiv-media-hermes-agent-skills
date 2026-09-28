@@ -1,0 +1,50 @@
+# [brand] Video — {TITLE}
+
+Brand: [brand one-line positioning]. Pillar: [content pillar]. Tagline: [brand tagline]. Audience: {AUDIENCE}
+
+Angle: {PROMPT_FOCUS}
+
+## Format
+NotebookLM Video Overview. Use **Explainer** format (structured, comprehensive). Length: 6-10 min.
+
+## Single host (voice gender unknown — works for either)
+Solo narrator, [character] of [brand] — [character voice and personality, one or two sentences]. Faceless narration only (no avatar shown).
+
+## Visual style ([brand] look)
+
+**Aesthetic:** [brand aesthetic, one or two sentences].
+
+- **Color palette:** [brand background color] backgrounds. [brand text color] primary text. [brand accent color] for highlights, headlines, key numbers. [brand emphasis color] for warnings and bear cases. [brand secondary color] for up-arrows and positive data.
+- **Typography:** Slab-serif headlines (Roboto Slab, Recoleta, or similar woodcut feel). Clean sans-serif body. Numbers in tabular-figure monospace for ticker/data-readout vibe.
+- **Slide treatment:** Parchment-paper texture overlays at low opacity on backgrounds. Subtle gold border/rule lines. Lower-third chyrons styled like financial news tickers but with the [brand] logo mark instead of a network bug.
+- **Mood:** Slightly gritty. Mild film grain or noise texture. NOT clean, NOT corporate, NOT overly polished. Think "weathered ship's log meets terminal screen."
+
+## Imagery & b-roll
+
+- **Prefer real space footage:** NASA, SpaceX, ESA, Rocket Lab, JWST imagery — public-domain or fair-use. Launches, satellites, deep-field images, mission control rooms, hardware close-ups.
+- **Charts and data viz:** stock tickers, earnings tables, candlestick charts, sector heatmaps. Style them in the brand palette (gold/teal up, red down). Animate sparingly — let numbers breathe.
+- **Mascot inserts:** [character] can appear as a static logo bug in corner or as a transition stinger. Do NOT animate the mascot into the body of the video — NotebookLM can't keep a character consistent frame-to-frame.
+- **Avoid:** generic stock-footage businesspeople, conference-room handshakes, fake hologram earth spins, AI-generated "futuristic city" imagery, blurry abstract gradients.
+- **Apply a consistent color grade:** push blacks deeper, lift gold/amber tones, slight desaturation on greens (so the brand's gold + teal pop).
+
+## Voice rules (narration)
+- Cold open (15-30 sec, contrarian fact, drop in)
+- Direct second-person address: "you," "watch this"
+- [brand metaphor family], one per minute max.
+- End: "[brand sign-off line]"
+- No AI tells ("It's not X, it's Y" / "And that changes everything")
+- No hype words (revolutionary, game-changing, seamless, leverage)
+- No "So," or "Well," openers
+- No generic-narrator filler: "In this video we'll explore," "let's dive in," "stay tuned"
+- Vary cadence — short punchy lines next to longer ones. No AI-monotone evenness.
+
+## Structure (6-10 min)
+
+1. **Cold open** (15-30 sec) — contrarian fact + the question the video answers. Visual: bold gold headline number over deep-black background, fast cut to relevant b-roll.
+2. **Why now** (30-45 sec) — why the audience should care today. Visual: timeline of recent events, dated chyrons.
+3. **Core argument** (3-5 min, 3-5 beats) — narrator walks through it with occasional rhetorical pushback ("you might think X — here's why that's wrong"). Visual: one strong image per beat, supporting data slide, recurring brand-palette chart treatments.
+4. **Strongest counter-argument** (45-60 sec) — narrator steelmans the skeptic, then responds. Visual: switch to [brand emphasis color] accent, "bear case" chyron, then back to gold.
+5. **Practical takeaway** (45-60 sec) — what to do, what to watch. Visual: clean checklist slide, brand palette.
+6. **Close** (15 sec) — tease next video + "[brand sign-off line]" Visual: [brand] logo + subscribe end card.
+
+{NICHE_FOOTER}Sources in attached file. Cite inline ("according to NASA," not URLs).

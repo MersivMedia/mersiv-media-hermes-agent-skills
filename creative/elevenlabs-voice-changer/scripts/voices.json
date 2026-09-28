@@ -1,0 +1,12 @@
+{
+  "narrator-alt": {
+    "voice_id": "6zTRy4vPhz1hAPsZhT9A",
+    "name": "Narrator Alt",
+    "description": "Deep gravelly [character] voice — [brand]"
+  },
+  "narrator": {
+    "voice_id": "TyJfVqGmT0iahaNbUE37",
+    "name": "Narrator",
+    "description": "Older gruff theatrical [character] (60s) — [brand]"
+  }
+}
