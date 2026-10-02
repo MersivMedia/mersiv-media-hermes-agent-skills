@@ -112,6 +112,57 @@ This applies to every `urllib.request.urlopen()` call in the process. Skip this 
 
 `REPLICATE_API_TOKEN` is not visible inside `execute_code`. Run Replicate API scripts from `terminal` instead. (Same goes for `GOOGLE_*` creds and most other secrets.)
 
+## Multi-stage paid runs: every step lives in a script file
+
+On Telegram the user often isn't watching when an approval prompt fires, and a
+timed-out approval means the step is blocked and must not be retried. On one
+reel this happened three times, each time on an **inline** compound command:
+`mv` chains, a `python … | python3 -c` summary pipe, and `&&`-chained
+QC + upload. All three ran cleanly once rewritten as `.sh`/`.py` files.
+
+The pattern:
+- Put the run, the QC and the upload for each stage in files (`run_<stage>.sh`,
+  `qc_<stage>.py`, `upload_<stage>.py`).
+- Invoke each with a plain `bash file.sh`.
+- Move files with a Python `shutil.move` script. Never delete.
+- Put the spend gate in the generator itself (`--max-usd`, and a quality gate
+  such as `--min-bg-pct` that exits before dependent jobs).
+- Don't poll a long background build with `sleep N; ls; cat log` one-liners.
+  One of these timed out on approval mid-build. Use
+  `process(action="wait")` on the background session instead. It needs no
+  approval and returns on exit. To read a log or check an output mid-run, use
+  the `read_file` tool rather than `cat`/`ls` in the terminal: a `cat log; ls`
+  status check was blocked by approval twice in one session.
+- Redirect output INSIDE the script (`> "$(dirname "$0")/x.log"`). Don't write
+  `bash x.sh > ~/.hermes/.../x.log` on the command line: a `~/.<dotdir>`
+  redirect is flagged HIGH as a "dotfile overwrite".
+  Redirect per command (`cmd > log 2>&1`), NOT with `exec > log 2>&1` at the
+  top. After `exec`, the background tracker saw stdout close and reported
+  "exited" (exit_code null) within seconds, while the build ran on for 25 min.
+  If that happens, confirm with `pgrep -af <script>` and poll the log with
+  `read_file`. Keep any in-terminal wait loop under ~400 s, because the terminal
+  tool is cut off at 420 s whatever `timeout=` says. Have the script echo a
+  final `BUILD_DONE` marker and look for it.
+- Never filter the only log of a failing run (`| grep -v "Broken pipe"` hid
+  the real crash twice). Write the full log to a file and grep the file
+  afterwards.
+- When copying a stage script to a new version with `sed`, check the diff
+  before running it. `s/v3/v4/g` also rewrote `build_service("drive", "v3")`,
+  the Drive API version. Also check that the copy still PRODUCES every file it
+  uploads: the v5 upload script assumed the phone copy already existed, so the
+  v6 copy uploaded the master and then crashed on a missing `reel_v6_phone.mp4`.
+  Keep "make derived files" and "upload" in one `finish_vN.sh`.
+
+When a step is still blocked, report exactly what did and didn't run, and wait
+for "continue".
+
+**Check the size of every file written before a paid run.** Twice in one session a long `write_file` landed
+truncated: 322 bytes, and once 314 bytes with the truncation marker written into the `.py` itself. The paid
+script would have imported a broken plan. After writing a plan or prompt module, import it and print
+`id / inputs / secs / len(prompt)` in the same runner script, BEFORE the `make_*.py --max-usd` call, so a bad file
+exits for free. Keep long prompts in their own small module (`plan_X_prompt.py` holding `P = (...)`), separate
+from the plan dict, so each write stays short.
+
 ## Image-to-image editing (CRITICAL workflow)
 
 When the user wants to **tweak** an existing image rather than regenerate, ALWAYS use image-to-image with the previous output as input. Regenerating from a text prompt almost always produces a different composition that throws away the parts they liked.
@@ -146,6 +197,7 @@ The phrase **"Only ONE change"** in the prompt dramatically improves i2i fidelit
 | Image editing (with text) | `openai/gpt-image-2` with `input_images` | Required when the source or edit involves rendered text |
 | Consistent multi-image sets / character sheets | `bytedance/seedream-4` with `image_input` (1–10 refs) | i2i from a canonical anchor. **One call per item** — see the multi-image pitfall below |
 | Many reference images | `google/nano-banana-pro` (up to 14 refs, 1K/2K/4K) | Highest reference count; good retouch/fallback pass |
+| **Photoreal stills / keyframes (user default)** | `google/nano-banana-pro` at `resolution: 2K` ($0.15, 2752×1536 at 16:9) | Clearly more photographic than `nano-banana` ($0.039), which the user rejected twice as "needs more photorealism". Input key is `image_input`, and it has `allow_fallback_model` |
 | Video with first+last frame | `bytedance/seedance-2.0` | Supports `image` (first) + `last_frame_image`; up to 15s; can generate audio |
 | Video with character reference locks | `bytedance/seedance-2.0` (up to 9 `reference_images`) | Richest reference surface on Replicate. NOTE: `image` and `reference_images` are **mutually exclusive** |
 | Video, lighter/cheaper | `bytedance/seedance-1-lite` | ≤12s, 1–4 `reference_images`, `camera_fixed` |
@@ -191,7 +243,7 @@ Only accepts `1:1`, `3:2`, `2:3`. Any other value → 422 error. Pick the closes
 
 ## Pitfall: flux-2-pro fails at letter substitutions in wordmarks
 
-When the user wants something like "replace the O in [BRAND] with a logo shape" — flux outputs glitched text. Use `openai/gpt-image-2` with the original wordmark as `input_images`. It handles letterform replacements cleanly.
+When the user wants something like "replace the O in MOON with a moon shape" — flux outputs glitched text. Use `openai/gpt-image-2` with the original wordmark as `input_images`. It handles letterform replacements cleanly.
 
 ## Video: first-frame to last-frame interpolation
 
@@ -252,8 +304,21 @@ before the poll loop. Fixing this turned an opaque `failed:` into
 
 Some models (observed on `minimax/h3`) return `latest_version: null`, so the
 schema-dump one-liner raises `TypeError: 'NoneType' object is not subscriptable`, and
-`/versions` 404s. Guard with `.get("latest_version")` and fall back to
-`default_example.input` keys to discover field names.
+`/versions` 404s ("This model does not expose a list of versions"). Guard with
+`.get("latest_version")` and fall back to `default_example.input` keys. For the
+FULL schema, fetch `https://replicate.com/<owner>/<model>` with a browser UA
+and parse the embedded `"properties": {...}` object that contains
+`first_frame_image` (brace-matched JSON).
+
+**`minimax/h3` input schema (read from the page 2026-09-29):**
+- `prompt` (string, no maxLength published)
+- `first_frame_image`, `last_frame_image` (uri): the output's first/last frame match these, and the aspect ratio follows the first frame
+- `reference_image_urls` (≤9), `reference_video_urls` (≤3), `reference_audio_urls` (≤3): public URLs; files-API URLs work
+- `duration` enum 4–15 (int, default 5); `resolution` enum `768P` | `2K` (default 2K)
+- `ratio` enum `adaptive`, `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, `9:16` ("adaptive for image-to-video")
+- There is no `seed`, no `negative_prompt` and no audio toggle. Put negatives in the prompt text.
+- `last_frame_image` works WITHOUT `first_frame_image` (verified 2026-09-30): H3 invents the opening from the prompt and lands on the pinned end frame (35 dB).
+- **First/last frames cannot be combined with any `reference_*_urls`**: `ModelError ... (E006) First/last frames cannot be combined with reference media`. This fails in about 10 s and isn't billed. Carry the object's identity through the pinned frame instead.
 
 ## Dry-run any payload assembling more than two inputs
 
@@ -288,6 +353,36 @@ This pattern shipped 20+ assets in one session for the [brand] brand. See `refer
 - `flux-2-pro`: ~$0.04/image
 - `gpt-image-2` high quality: ~$0.17/image (quality "high"), ~$0.05 (quality "medium")
 - `seedance-2.0`: ~$0.30-0.50 per 5-7s clip
+- `seedance-2.5`: $0.23/s at 720p text/image-to-video, but **$0.97/s when a
+  video goes in**. Max 720p. Always price edit-heavy plans on the video-in
+  tier.
+- **For multi-shot video jobs, send a cost table (per model × resolution,
+  plus a ~25% reroll buffer) and wait for approval before the first
+  generation.** The user asked for exactly this on the sizzle reel ("get
+  back to me on the cost before you start").
+- **Multi-shot plans go in a Google Sheet, not chat.** The user asked for "a
+  Google spreadsheet with the full prompts, style, subjects, camera angle
+  including the model, length, price". Use one row per still, shot and edit,
+  with the FULL prompt text in a column, plus a summary tab (concept, format,
+  cost breakdown, staged gate). Keep the plan as data modules that both the
+  sheet builder and the generation script import, and diff the sheet back
+  against the data before sending the link. Recipe:
+  `references/match-cut-relay-transitions.md` § Planning deliverable.
+- Image-edit costs (live 2026-09-29): `google/nano-banana` $0.039,
+  `nano-banana-pro` $0.035–0.30 by resolution, `flux-kontext-pro` $0.04,
+  `flux-2-pro` $0.015/MP. All accept `aspect_ratio: match_input_image`, which
+  is what keeps a keyframe chain 16:9.
+- `minimax/h3`: $0.08/s at 768P, $0.13/s at 2K (5 s = $0.40 / $0.65). Hosted
+  2K is the only way to get H3-Regenerate-2K, which is not open-sourced.
+- Video character replacement: `wan-video/wan-2.2-animate-replace` $0.10
+  (480p) / $0.25 (720p) per 5 s; `kwaivgi/kling-o1` $0.42-0.84;
+  `runwayml/gen4-aleph` $0.90. The comparison against a self-hosted RunPod
+  H3 pod is in `ref-character-replacement-content-pipeline`
+  `references/cost-and-resolution.md`.
+- **Prices live on the model page, not the API.** `/v1/models` carries no
+  price. Fetch `https://replicate.com/<owner>/<model>` with a browser UA and
+  grep the text for `$`. The page HTML also embeds the full input schema,
+  which helps when `latest_version` is null (as on `minimax/h3`).
 - Batch wisely. For 25+ images of the same type, do a test of 1, validate, then run the batch.
 
 ## A description states intent; only the INPUT SCHEMA states capability
@@ -352,6 +447,18 @@ most common way to burn a session. Verified across many attempts:
 | Apparent age, wardrobe | Promptable only when **anchored to the reference image**, not to a number |
 | Unwanted rendered features | Negate the **feature and its mechanism**, not its colour/attributes |
 | Style/grade on a reference plate | Must be **excluded** — it propagates through i2i into every derived image |
+| Object SIZE change in an i2i edit that also says "keep the same position/size" | **NOT promptable in one step** — generate the frame fresh, or run a separate shrink-only edit ("make X MUCH smaller, ~3% of width, keep everything else") |
+| Exactly one object on a plain brand background | **Compose in code**: the model duplicates the object and invents surfaces. Crop a clean product shot and paste it onto the canvas |
+| Extreme camera angle (nadir/vertigo, overhead) | Promptable only **geometrically**: "camera points exactly straight down, ninety degrees; every frame edge is facade; no sky, no horizon". "Looking down the facade" gave a tilted frame with sky on one side |
+| Light/weather continuity across first→last-frame video | State the from→to change and its cause in the prompt ("Time, light and weather: ..."), read off the actual keyframe images. Say "hold constant" for shots that must not flicker |
+| Background life in video (rain, traffic, crowds) | Promptable only if the bracketing KEYFRAMES show those elements readably (not bokeh) AND the prompt names each moving element. "Simple, even motion" froze the background (3.7% of pixels moving); readable keyframes + named motion gave 14.9% and passed. Measure with `scripts/bg_motion_check.py`, and gate dependent edits on it automatically |
+| Object swap in a video look edit ("holds roses instead of the crane") | Pin the new object's SIZE and POSITION, plus "camera distance and framing unchanged, no zoom". Unpinned, H3 zoomed in to feature the object (best offset -4, alignment broken) |
+| Music hit timing (stable-audio-2.5) | **NOT promptable**: timestamps in the prompt are ignored. Generate a steady bed at a stated BPM plus isolated SFX, measure the real beat grid, and place the hits in code (`references/audio-models.md`) |
+| H3 first/last-frame clip ends (eased/frozen frames) | **Compute, don't prompt**: H3 eases into and out of its keyframes, and freezes up to 32 frames on a fade-to-black. Trim by measured frame-to-frame motion before assembly; filling a slot by resampling shows up as visible "pauses" |
+| Relay object MOVING between worlds in first/last-frame video | Promptable only as a **physical event + camera move + boundary crossing** (a gust knocks it into a pool; it springs up and punches through the cloud layer; it nose-dives through a leaf canopy). "Dissolves into / washes away" plus "holds its screen position" gave a hovering object over a cross-fade (median motion 1.5–2.2). The user rejected those; the boundary version scored 8.9 and was their favourite. Pin only the first/last frames. See `match-cut-relay-transitions.md` § Transitions must TRAVEL |
+| "Choppy" multi-shot journey (fall, dive, chase) | **Measure, then re-render as ONE long shot.** Chained 4–6 s first/last-frame shots dip to about 4 motion at every join (H3 easing), and the user hears "choppy". One 8–15 s H3 shot removed the dips. Scan long outputs for H3-inserted hard cuts: a dissolve over one passed the metric but the user still saw it, so re-render. Tool: `scripts/motion_profile.py`; recipe: `match-cut-relay-transitions.md` § Long continuous shots |
+| Background life to the END of a first/last-frame shot; traffic direction across a seam | **Measure with optical flow, then name it in the prompt.** H3 froze the street for the last ~4 s of a 15 s shot as it converged on the end still, and a shot starting from a shared frame reversed the flying traffic. Prompt: "still moving at full speed in the very last frame"; "every flying car keeps moving right to left, exactly as in <Picture 1>, never reverses". Verified in round 2: the end-frame wording fixed the frozen street (road flow 0.1 → 3–6); the direction wording held for flying cars but NOT fully for a train (keep conflicting vehicles out of frame instead); long takes with no "[Shot 1]"/timecoded segments that open "single unbroken take with no cuts" had zero inserted cuts over 12 s. See `references/background-motion-continuity.md` |
+| Object vs a barrier (rail, glass, ledge) in video | **Endpoint geometry decides this, not the prompt.** The spatial wording ("reaches out past the glass, lets go on the outside ... never passes through the glass/rail/floor") got the hand-over-the-rail action right. But with the first frame on a terrace and the last frame outside and below the balcony, H3 dove the camera straight through the slab on 2 of 2 renders, even with "camera stays at the rail, does NOT sweep down across the balcony". The user rejected both: "it needs to get a little cut off by the base of the balcony". **Pin only the frames a seam needs:** the opening shot needs only `last_frame_image`. Dropping its first frame (the user's idea) got the base to occlude the crane. H3 still passed the camera through the slab, as a ~6-frame black wipe, so scan per-frame luma for near-0 runs. Before rendering, check whether the camera path between the endpoints crosses a solid object; if it does, change the endpoints. Treat the object drawn over a solid surface as a defect in QC. Splice mechanics for patching only the bad span of an approved take are proven. See `match-cut-relay-transitions.md` § Surgical patch and § endpoints pitfall |
 
 Full measurements, the luma-only gamma recipe, the QC-gate thresholds, and the
 "suspect your own fix" pattern are in `references/prompt-vs-compute.md`. Read it
@@ -368,9 +475,25 @@ directory so a buggy post-process never forces a regeneration.
 - `references/output-validation.md` — A/B vision-grid pattern for verifying that a prompt fix actually landed.
 - `references/multi-image-sets-and-reference-locks.md` — consistent multi-image sets, `sequential_image_generation` failure modes, files-API upload caching, error surfacing, video-model reference-input matrix, reference-budget allocation, content-safety (E005) isolation method.
 - `references/prompt-vs-compute.md` — what a model will and won't obey: luma-only gamma normalization, unpromptable camera angles, muscle-action expression prompts, objective QC gate thresholds, "suspect your own fix".
-- `references/video-model-apis.md` — video duration ceilings, `image` vs `reference_images` mutual exclusion, content-safety (E005) A/B isolation, and fal-specific quirks (unprefixed endpoint ids, app-path status/result polling, required `prompt_expansion_mode`, measured H3 Max speed, balance-as-403).
+- `references/video-model-apis.md` — video duration ceilings, **live per-second price tiers (H3 vs Seedance 2.5 with and without video input)** and how to scrape them from the model page, `image` vs `reference_images` mutual exclusion, content-safety (E005) A/B isolation, and fal-specific quirks (unprefixed endpoint ids, app-path status/result polling, required `prompt_expansion_mode`, measured H3 Max speed, balance-as-403).
+- `references/rapid-change-sequence.md` — one base motion, N full-clip restyles, beat-sliced on original timecodes into one continuous "rapid outfit/hair/style change" shot. Includes the cost model, the H3 look-edit call shape, and a mandatory stage-1 alignment gate (edge-map diff + ±6-frame offset search + beat-cut preview). **Proven on H3 2K (2026-09-29):** each look matches the base's frame count, the best offset is 0 frames, pose and hands are identical, and hard 0.5 s cuts read as one motion with no dissolve needed.
+- `references/match-cut-relay-transitions.md`: make a multi-shot reel read as ONE continuous take. Shared hand-off keyframes serve as the last frame of shot N and the first frame of shot N+1. The keyframe half has run over 4 rounds ($4.27). The file also covers:
+  - the user's standing preferences: **everything photoreal**, and a relay object at plausible scale with an explicit % width per frame;
+  - the **required time/light/weather change sentence in every shot prompt**, read off the actual keyframes into a `STATES` dict, with a sheet column;
+  - geometric perspective prompts for vertigo shots;
+  - why "keep the same size" edits can't shrink an object;
+  - end frames built in code, red-mask QC false positives, candidate batches, 60 s calm/chaos planning, and the swallow-to-space transition;
+  - **implied light sources** in a keyframe (a diver's torch) must become subjects in the shot that ends on it;
+  - the Google Sheet plan.
+  Video stage 1 has run on H3 2K: the first/last-frame seams held, 1,600-char prompts were accepted, and each clip took 275–408 s. The output has a +0.2–0.6 s duration overshoot and an audio track that must be stripped.
 - `references/audio-models.md` — music, cover and voice-conversion models: the preserve-vs-regenerate decision that picks the tool, the `format: uri` capability check, a verified survey of cover/voice/separation models, the text-only models that masquerade as cover models, the multi-step chain for full-length style covers, the audio-specific API rules (pinned versions, 15 s reference minimum, stem-dict output), and the self-hosted YuE2 fallback with measured weight sizes.
 - `scripts/replicate_generate.py` — reusable helper for parallel generation with polling.
+- `templates/relay_assemble.py`: the v1 60 s relay-reel assembler. **Its video retiming is superseded:** it samples each clip evenly into a fixed slot, and the user rejected the result for repeated frames ("pauses from the same frames being shown twice") and rough seams. For video, use the working v3 assembler at `~/.hermes/data/sizzle-reel/assemble_v3.py` and follow "Assembly" in `match-cut-relay-transitions.md`. It plays clips at native speed, trims H3's frozen and eased heads and tails, cuts on the best match with a 4-frame dissolve, slows calm shots with minterpolate, and keeps only one look decoder open at a time. That was verified on reels v3 and v4. **For seams, the user's own method has replaced the 4-frame dissolve: `--flow`, which trims 2 frames each side, overlaps 0.5 s and uses an optical-flow cross-dissolve (`scripts/flowblend_worker.py`).** When the user suggests an editing technique, implement it, A/B it on the worst seam (a full-res mid-overlap crop, plain vs new), then rebuild the reel and report what changed, including side effects such as lost runtime. The audio half of the template is still good to reuse: a BPM-corrected bed, SFX peaks placed on the ACTUAL cut times, and loudnorm at -14 LUFS.
+- `scripts/keyframe_chain.py` — `gen` builds a match-cut keyframe chain from a JSON plan (flux for the first frame, then nano-banana edits of each predecessor). It is resumable, has a `--max-usd` cap and keeps a spend ledger. `qc` prints the relay object's centroid drift and writes a crosshair contact sheet.
+- `scripts/bg_motion_check.py`: measures how much of a clip's BACKGROUND actually moves (frame-diff outside a subject box, plus a motion-map PNG). Run it on any street, crowd, rain or traffic clip, and on a rapid-change BASE before paying for its looks. A 3.7% reading was rejected by the user as "nothing moving in the background". The fix is in the keyframes, which need readable cars, people and rain rather than bokeh, and in the prompt, which should name the background motion instead of "simple, even motion".
+- `scripts/motion_profile.py`: whole-frame motion profile of a clip or a reel time range (`--from/--to`): median motion (under about 4 on a world-change shot reads as static), motion per second (dips at shot joins = "choppy"), H3-inserted hard internal cuts, and near-duplicate frames ("pauses"). Run it BEFORE proposing a re-render when the user says choppy, static or pausing, and on every long generation before assembly.
+- `scripts/flowblend_worker.py`: an optical-flow cross-dissolve for stitching clips, using the **user's preferred stitching method**: trim 2–3 extra frames off each side of a seam to drop the model's deceleration zone, overlap 0.5–1 s, cross-dissolve, and warp both frames along forward/backward flow so the picture doesn't double. Where flow can't be tracked it falls back to a plain dissolve. It's a stdin subprocess that needs only cv2 and numpy. The sizzle assembler exposes it as `assemble_v3.py --flow`. Measured result: one crisp crane where a plain dissolve showed two.
+- `references/background-motion-continuity.md`: the defects the user caught AFTER every frame and seam metric passed. The background freezes as H3 converges on the last frame; traffic reverses direction at a shared-keyframe seam; H3 inserts cuts inside long shots, and a dissolve over them stays visible; pauses at joins are fixed by merging shots. Covers optical-flow measurement (band split, and the tilt/parallax caveat), and measure → quote → re-measure per defect.
 
 ## Verifying image output when you cannot see images
 

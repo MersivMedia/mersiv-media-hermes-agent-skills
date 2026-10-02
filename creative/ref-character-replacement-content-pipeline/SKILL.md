@@ -47,7 +47,12 @@ but hasn't run on a real pod yet.
 Second attempt: H100 placed, first batch push died on tar ownership as root,
 and the pod idled ~75 min ($4.48) because the failure path waited on a broken
 watcher and pod self-stop was being 403'd. See pitfall 23. All fixed; 50/50
-offline checks pass (`tests/run_all.sh`). **Nothing has rendered on v1.1 yet.**
+offline checks pass (`tests/run_all.sh`).
+Third attempt (19:11–20:52, H100, $5.69): **first real v1.1 run.** Bring-up,
+tar push, manifest overrides, 768p aspect sizing, the audio route, the budget
+guard, sync to Drive and the verified local stop all worked. Phase A finished;
+the upscale lane crashed on the 4K job, and B/C never ran. Numbers, conclusions
+and 4 open bugs are in `references/perf-session-2026-09-28.md` (pitfall 24).
 **Not built:** long-form chunker.
 
 User-approved optimisation list (2026-09-28): ① auto-stop ② batching
@@ -181,7 +186,7 @@ conditioned on.
 
 | Path | What |
 |---|---|
-| `comfy_node/h3_prompt_director/` | Node: instruction + source video + character image + checkbox + duration → six-section H3 prompt via Claude. Ships `guide_ref_en.md` (official prompt guide) and `cinematography_vocab.md` (from THIS WAY `shot_taxonomy.json`). Key read from env only |
+| `comfy_node/h3_prompt_director/` | Node: instruction + source video + character image + checkbox + duration → six-section H3 prompt via Claude. Ships `guide_ref_en.md` (official prompt guide) and `cinematography_vocab.md` (from generative-video-consistency-agent-pipeline's `shot_taxonomy.json`). Key read from env only |
 | `scripts/build_workflow.py <supplied_wf.json> <out.json>` | Rebuilds from the original graph (`https://pastebin.com/raw/vbnTGZua`): official UNET/LoRA/TE, SAM3 cutout branch, checkbox + switch, Director. Validates link integrity |
 | `workflows/h3_refswap.json` | Built UI workflow; deployed as `user/default/workflows/H3 Ref Character Replacement.json` |
 | `scripts/run_refswap.py` | Runs **on the pod**: UI→API conversion against live `/object_info`, queue, poll. `<wf> <bg 0/1> "<instruction>" [duration] [turbo 0/1]`. Writes `/root/last_api.json` |
@@ -193,6 +198,7 @@ conditioned on.
 | `scripts/autostop_watch.sh [batches...]` | Local background watcher: sync then stop on STOP_REQUESTED; hard cap `MAX_MIN` (120) |
 | `scripts/perf_session.sh <src> <ref>` + `perf_report.py` | The v1.1 test matrix and its report (measured numbers only). Holds `/root/SESSION_HOLD` so autostop can't fire between phases |
 | `scripts/poll_and_run.sh <src> <ref>` | Poll the approved GPU list every `POLL_S` (60) s, then run perf_session unattended + auto-stop. Stops the pod if bring-up fails after placement |
+| `scripts/gpu_stock_by_dc.py [--dc EU-NL-1] [--min-vram 48] [--gpu ID --all-dcs]` | Live per-datacenter GPU stock + price (GraphQL `lowestPrice` with `dataCenterId`). Use it when the preferred card won't place |
 | `pod/bootstrap.sh` | On-pod rebuild after every start: apt, websocket-client, node + workflow deploy, SAM3 symlink, nginx+auth, lanes, gpu logger, autostop, upscale worker, self-check. `--restart-render` relaunches only the render lane (SAGE toggle) |
 | `pod/comfy_api.py` | Shared client: UI→API (V3 nested combos), run with per-node + per-step timing via websocket, exec time from ComfyUI's own timestamps |
 | `pod/batch_runner.py` | Manifest → staged inputs → per-job overrides → render → `renders/`, sidecar, `results.csv`, upscale tickets. Skips jobs already ok |
@@ -271,7 +277,29 @@ Output was 864×480 because `ResolutionSelector` (node 115) is at 0.4 MP. Set
 0.98 MP for 1344×768 (H3's local max); not yet done. H3 rounds to 17k+5 frames
 (5 s → 124 vs 120 source); trim when chunking.
 
-## Test session (first v1.1 run; budget ~60-75 GPU-min, hard cap 90)
+## Test session (budget ~60-75 GPU-min, hard cap 90)
+
+**Status:** Phase A ran on 2026-09-28 (results in the reference file). The
+pitfall 24 bugs are fixed offline. Session 2 (2026-09-29) runs `PHASES=BCR`
+on an RTX PRO 6000 only. Launch it with
+`~/.hermes/data/ref-character-replacement/session2_pro6000.sh`
+(`ALLOW_GPUS=""`, `A_BATCH=2026-09-28_perf-a-serial`, `MAX_GPU_MIN=45`).
+
+Knobs (env, read by `poll_and_run.sh` / `perf_session.sh`):
+| Var | Effect |
+|---|---|
+| `ALLOW_GPUS` | `\|`-separated GPU ids beyond PRO 6000; `""` = PRO 6000 only. Unset = H100 PCIe + SXM fallbacks |
+| `PHASES` | letters to run, e.g. `BCR`. R (recover) always runs last, so the budget cap cuts it first |
+| `A_BATCH` | earlier phase-A batch for R to recover |
+| `R_TARGETS` | heights to re-ticket; `@2160` = adopt an already-saved 4K only, never start a new one (default `1440 @2160`) |
+| `C_UPSCALE` | phase C upscale target (default 1440; 4K is ~40 min/clip) |
+| `MAX_GPU_MIN` | session budget guard |
+
+**"PRO 6000 only" also guards restarts:** `refswap_up.sh` restarts the existing
+stopped pod only if its GPU is on the allow-list (unknown GPU type = not
+allowed). Otherwise it creates a new pod and terminates the old one.
+`tests/test_gpu_allowlist.sh` asserts that no H100 pod is restarted and that
+only the two PRO 6000 ids are requested.
 
 `scripts/perf_session.sh` runs these phases, each as a batch:
 | Phase | Jobs | Measures |
@@ -414,7 +442,61 @@ Background swaps seam more visibly than character-only.
     BEFORE perf_session's per-row edits, which made it look all-768p.
     `show_manifest.py` now prints the final on-disk rows.
 
-Run everything offline with `tests/run_all.sh` (50 checks) before any pod session.
+24. **Perf session 2026-09-28: bugs that survived a green offline suite.**
+    Details in `references/perf-session-2026-09-28.md`.
+    a. **Pick ComfyUI outputs by `type == "output"`, never by list position.**
+       History `outputs` include input previews (the load node's preview of the
+       source clip). `vids[-1]` grabbed the input name and crashed the upscale
+       worker with FileNotFoundError under `output/`. Same rule for
+       `batch_runner.py` and `upscale_worker.py`.
+    b. **Any wait loop on a worker needs a liveness check**, not just "are
+       tickets left". A crashed worker leaves a `.working` ticket behind forever,
+       and the loop burned ~25 GPU-min until the budget guard fired.
+    c. **The mock ComfyUI returned only the SaveVideo output**, so it couldn't
+       catch (a). Mocks must return realistic history: input previews,
+       multiple output nodes, `type` fields.
+    d. **A websocket `timeout=` also applies to `recv()`.** Any node that is
+       silent for longer than it (the Director waits on Claude) makes the
+       client drop to HTTP polling. After that, no node/step events arrive, the
+       whole render is credited to that one node, and `median_step_s` stays
+       empty. Set a short recv timeout and treat a timeout as silence, not
+       disconnect. Fixed in `comfy_api.run`; check it on the next pod run.
+    (a)–(d) are all fixed and red/green tested (see the reference file). Resume
+    a partial session with `PHASES=BCR`: R recovers stranded upscales without
+    re-rendering (`pod/recover_upscales.sh` adopts files ComfyUI saved but the
+    worker never copied, and re-tickets only what's missing).
+    Worker liveness: `pod/batch_status.sh <batch>` prints DONE / BUSY /
+    WORKER_DEAD (heartbeat `/root/upworker.alive` >120 s or no process).
+    `wait_batch` restarts the worker once, then abandons that batch's remaining
+    upscales. Tests: `test_perf_fixes.py` (red on the old code, 8/13 fail),
+    `test_waitbatch.sh`, `test_recover.sh`.
+    e. **Measured results that change defaults:** 768p costs the same as 480p
+       once warm, so render 768p. 3 turbo steps saved no time. SeedVR2
+       480p→2K costs more than the render and only slightly beats plain 768p;
+       4K is ~40 min per 5 s clip. Recommend 768p, and upscale only on demand.
+
+Run everything offline with `tests/run_all.sh` (10 suites) before any pod session.
+
+25. **Placement stall (2026-09-29):** RunPod placed a PRO 6000 pod
+    (`<pod-id-1>`, machine `<machine-id>`) that never got a container:
+    `runtime=null`, no IP, 10 min, ~$0.20. Healthy pods here reach RUNNING in
+    15–30 s. `refswap_up.sh` now waits `WAIT_S` (480 s), then TERMINATES the pod
+    (stopping it isn't enough, because a restart lands on the same stuck
+    machine), verifies it's gone, clears `pod_id`, and exits 3. `poll_and_run.sh`
+    treats rc 3 as "keep polling" and gives up after `MAX_STALLS` (3). Tested
+    in `tests/test_stall.sh`. GPU restriction: `ALLOW_GPUS=""` means PRO 6000
+    only, and `refswap_up` won't restart an existing pod whose GPU isn't
+    allowed (`tests/test_gpu_allowlist.sh`).
+    **Terminate-and-retry doesn't escape a stuck host when the volume's DC has
+    one free machine for that GPU.** The retry (`<pod-id-2>`) landed on the
+    same `<machine-id>` and stalled again. Check the placement with GQL
+    `pod(input:{podId}) { machineId runtime }`: `runtime=null` after ~60 s on a
+    machineId that already stalled means stop and ask, not poll. Report the
+    in-DC alternatives (runpod-pods `gpu_stock_by_dc`-style query). On
+    2026-09-29 EU-NL-1 had only H100 SXM ($3.49), L40S (48 GB, too small for
+    H3's 80.8 GB peak) and B300 (excluded). Moving DC to reach PRO 6000 means a
+    new ~270 GB volume, a rebuild and ~$7–14/month. That's worth it only if PRO
+    6000 becomes the long-term default.
 
 ## Verification
 

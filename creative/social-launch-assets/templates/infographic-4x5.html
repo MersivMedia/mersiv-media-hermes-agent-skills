@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- 4:5 LinkedIn infographic starter (1080x1350 CSS px; render at 2x).
+     Dark navy + ONE accent. Swap text/numbers; keep every number traceable
+     to the project README. Render: scripts/render_html.sh this.html out.png -->
+<html><head><meta charset="utf-8">
+<style>
+  :root { --bg:#070d1c; --panel:#0e1730; --line:#1d2a4a; --ink:#eef3ff; --dim:#8b99bd; --acc:#3ff3c4; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:1080px; height:1350px; background:var(--bg); }
+  body { font-family:"Inter",sans-serif; color:var(--ink); position:relative; overflow:hidden;
+         padding:60px 64px 44px; display:flex; flex-direction:column; }
+  body::before { content:""; position:absolute; inset:0;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:54px 54px; opacity:.35; mask-image:radial-gradient(ellipse at 70% 10%,#000 0%,transparent 70%); }
+  body::after { content:""; position:absolute; width:720px; height:720px; right:-260px; top:-300px;
+    background:radial-gradient(circle,rgba(63,243,196,.18),transparent 65%); }
+  .z { position:relative; z-index:1; }
+  .mono { font-family:"JetBrains Mono",monospace; }
+  .top { display:flex; justify-content:space-between; align-items:center; }
+  .tag { font-size:19px; letter-spacing:.22em; color:var(--acc); font-weight:700; }
+  .tag b { color:var(--ink); }
+  .pill { font-size:16px; color:var(--dim); border:1px solid var(--line); border-radius:99px; padding:8px 16px; }
+  h1 { font-size:50px; line-height:1.08; font-weight:800; letter-spacing:-.02em; margin-top:34px; }
+  h1 span { color:var(--dim); font-weight:600; }
+  .hero { display:grid; grid-template-columns:1.05fr 1fr; gap:34px; margin-top:34px; align-items:center; }
+  .big { font-size:196px; font-weight:900; letter-spacing:-.06em; line-height:.85; color:var(--acc); }
+  .bigsub { font-size:25px; font-weight:600; margin-top:14px; line-height:1.3; }
+  .bigsub em { font-style:normal; color:var(--dim); font-weight:500; }
+  .bars { background:var(--panel); border:1px solid var(--line); border-radius:22px; padding:26px 28px; }
+  .bars h4 { font-size:15px; color:var(--dim); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .bar { margin-top:18px; }
+  .bar .lab { display:flex; justify-content:space-between; font-size:18px; color:var(--dim); margin-bottom:8px; }
+  .bar .lab b { color:var(--ink); font-family:"JetBrains Mono",monospace; }
+  .track { height:30px; border-radius:8px; background:#16223f; overflow:hidden; }
+  .fill { height:100%; border-radius:8px; background:#44527a; }
+  .fill.acc { background:var(--acc); }
+  .bars p { font-size:15px; color:var(--dim); margin-top:16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,1fr); margin-top:30px; border:1px solid var(--line);
+           border-radius:18px; background:rgba(14,23,48,.7); }
+  .strip div { padding:20px 22px; }
+  .strip div + div { border-left:1px solid var(--line); }
+  .strip b { display:block; font-size:36px; font-weight:800; letter-spacing:-.02em; }
+  .strip span { font-size:16px; color:var(--dim); line-height:1.3; display:block; margin-top:4px; }
+  .flow { display:flex; align-items:stretch; gap:10px; margin-top:28px; font-size:17px; }
+  .flow .n { flex:1; display:flex; flex-direction:column; justify-content:center;
+             background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 16px; font-weight:600; }
+  .flow .n.hl { border-color:var(--acc); color:var(--acc); }
+  .flow .n small { display:block; font-weight:500; color:var(--dim); font-size:13px; margin-top:2px; }
+  .flow .ar { display:flex; align-items:center; color:var(--acc); font-size:22px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:28px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px 20px 18px; min-height:176px; }
+  .card.hi { border-color:rgba(63,243,196,.55); box-shadow:0 0 0 1px rgba(63,243,196,.15) inset; }
+  .card svg { width:30px; height:30px; stroke:var(--acc); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .card h3 { font-size:20px; font-weight:700; margin-top:12px; }
+  .card .stat { font-size:27px; font-weight:800; margin-top:6px; }
+  .card .stat i { font-style:normal; color:var(--acc); }
+  .card p { font-size:14.5px; color:var(--dim); margin-top:5px; line-height:1.35; }
+  .foot { margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end;
+          padding-top:22px; border-top:1px solid var(--line); }
+  .foot .url { font-size:22px; font-weight:700; }
+  .foot .url span { color:var(--acc); }
+  .foot .note { font-size:13.5px; color:var(--dim); text-align:right; line-height:1.45; }
+</style></head>
+<body>
+<div class="z">
+  <div class="top"><div class="tag mono"><b>PROJECT</b> // ONE-LINE DESCRIPTOR</div><div class="pill mono">open source</div></div>
+  <h1>Hook line naming the problem<br><span>and what you did about it.</span></h1>
+  <div class="hero">
+    <div><div class="big">−00%</div><div class="bigsub">headline metric.<br><em>qualifier (n, correctness).</em></div></div>
+    <div class="bars">
+      <h4>Test setup</h4>
+      <div class="bar"><div class="lab">Baseline <b>$0.00</b></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+      <div class="bar"><div class="lab">With project <b>$0.00</b></div><div class="track"><div class="fill acc" style="width:60%"></div></div></div>
+      <p>range or spread</p>
+    </div>
+  </div>
+  <div class="strip">
+    <div><b>$0</b><span>stat one caption&nbsp;here</span></div>
+    <div><b>$0</b><span>stat two caption&nbsp;here</span></div>
+    <div><b>0%</b><span>stat three caption&nbsp;here</span></div>
+  </div>
+  <div class="flow">
+    <div class="n">Input<small>detail</small></div><div class="ar">→</div>
+    <div class="n hl">Engine<small>detail</small></div><div class="ar">→</div>
+    <div class="n">Rule<small>detail</small></div><div class="ar">→</div>
+    <div class="n">Outcome<small>detail</small></div>
+  </div>
+  <div class="grid">
+    <!-- 6 cards; add class "hi" to the 2 headline features. Icons: Lucide-style 24x24 paths. -->
+    <div class="card hi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg><h3>Feature</h3><div class="stat"><i>00%</i> metric</div><p>why it exists, one line</p></div>
+  </div>
+</div>
+<div class="foot z">
+  <div class="url mono">github.com/<span>owner/repo</span></div>
+  <div class="note">Safety/rollout line.<br>Results from one install; methods and caveats in the repo.</div>
+</div>
+</body></html>

@@ -4,6 +4,7 @@
 #
 #   LANE_LAYOUT=serial|shared|split  SAGE=0|1  GPU_NAME=...  GPU_RATE=...  bash /root/pod/bootstrap.sh
 #   bash /root/pod/bootstrap.sh --restart-render    # relaunch only the render lane (e.g. toggle SAGE)
+#   bash /root/pod/bootstrap.sh --restart-upworker  # relaunch only the upscale worker (requeues stale tickets)
 #
 # Expects /root/secrets.env (ANTHROPIC_API_KEY, COMFY_USER, COMFY_PASS) and the
 # skill's pod/ + comfy_node/ copied to /root/pod/ by refswap_up.sh.
@@ -39,6 +40,18 @@ render_args() {
   [ "$LAYOUT" = shared ] && a="$a --reserve-vram ${RESERVE_VRAM_GB:-6}"
   echo "$a"
 }
+
+start_upworker() {
+  local up=http://127.0.0.1:8189
+  [ "$(python3 -c 'import json;print(json.load(open("/root/refswap_state.json")).get("layout","serial"))' 2>/dev/null)" != serial ] && up=http://127.0.0.1:8190
+  tmux kill-session -t upworker 2>/dev/null || true
+  tmux new-session -d -s upworker "$PY -u $POD/upscale_worker.py --host $up >> /root/upworker.log 2>&1"
+  log "upscale worker (re)started on $up"
+}
+
+if [ "${1:-}" = "--restart-upworker" ]; then
+  start_upworker; exit 0
+fi
 
 if [ "${1:-}" = "--restart-render" ]; then
   launch_lane render 8189 0 $(render_args); wait_lane 8189 render
@@ -121,7 +134,11 @@ wait_lane 8189 render
 python3 - <<EOF
 import json, subprocess
 gpu = subprocess.run(["nvidia-smi","--query-gpu=name","--format=csv,noheader"],capture_output=True,text=True).stdout.strip().splitlines()
-json.dump({"layout":"$LAYOUT","sage":int("$SAGE"),"gpu":"${GPU_NAME:-}" or (gpu[0] if gpu else "?"),
+# GPU_NAME arrives as "?" when RunPod's REST omits machine.gpuTypeId (it did on
+# 2026-09-28: every results row said gpu=?). Treat "?" as unknown -> nvidia-smi.
+name = "${GPU_NAME:-}".strip()
+name = name if name not in ("", "?") else (gpu[0] if gpu else "?")
+json.dump({"layout":"$LAYOUT","sage":int("$SAGE"),"gpu":name,
            "gpu_count":len(gpu),"gpu_rate_per_hr":float("${GPU_RATE:-0}" or 0),"lane_ports":"$PORTS"},
           open("/root/refswap_state.json","w"), indent=1)
 EOF
@@ -129,9 +146,7 @@ tmux has-session -t gpulog 2>/dev/null || tmux new-session -d -s gpulog "python3
 tmux kill-session -t autostop 2>/dev/null || true
 rm -f /root/STOP_REQUESTED /root/SYNCED
 tmux new-session -d -s autostop "LANE_PORTS=$PORTS python3 $POD/autostop.py"
-if [ "$LAYOUT" != serial ]; then UP_HOST=http://127.0.0.1:8190; else UP_HOST=http://127.0.0.1:8189; fi
-tmux kill-session -t upworker 2>/dev/null || true
-tmux new-session -d -s upworker "$PY -u $POD/upscale_worker.py --host $UP_HOST > /root/upworker.log 2>&1"
+start_upworker
 
 # ---- 6. self-check ------------------------------------------------------------
 curl -s http://127.0.0.1:8189/object_info/H3PromptDirector | grep -q H3PromptDirector && log "Director node loaded" || log "WARNING: Director node missing"

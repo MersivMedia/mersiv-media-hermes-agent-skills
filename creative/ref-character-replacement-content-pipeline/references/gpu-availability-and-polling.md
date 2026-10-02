@@ -54,3 +54,25 @@
 - A notify of `exit 1` means placement happened and bring-up failed. Read
   `poll.status` + the `poll.log` tail and confirm via `pod.py list` that the pod
   is EXITED before anything else.
+
+## Stuck-host placements (2026-09-29)
+- Two PRO 6000 placements in a row (`<pod-id-1>`, then `<pod-id-2>`)
+  landed on the SAME machine `<machine-id>`. Both sat with `desiredStatus
+  RUNNING`, `runtime: null` and no IP, and never booted. `pod.py wait` timed out
+  at 600 s on the first. Healthy pods here reach RUNNING in 15–30 s.
+- Diagnose while waiting, not after:
+  GQL `pod(input:{podId:"<id>"}) { machineId runtime { uptimeInSeconds } }`.
+  If runtime is null after ~60 s on a machineId that already stalled, terminate
+  it and stop polling. Report to the user: pod ids, the machine id,
+  "Rented by User" timestamps, and runtime null.
+- `refswap_up.sh` terminates stalled pods (exit 3) and the poller retries up to
+  `MAX_STALLS`. That helps only if the DC has more than one free machine for the
+  GPU. With one free machine it just repeats the stall at ~$0.28 per try.
+- The user asked "is there another GPU we can use?" Answer with
+  `scripts/gpu_stock_by_dc.py --dc EU-NL-1` (in-DC table: VRAM, $/hr, verdict
+  vs H3's measured 80.8 GB peak) plus `--gpu <id> --all-dcs` to show where the
+  preferred card IS in stock. Also give the real cost of moving: a new volume,
+  the rebuild and monthly storage.
+  Snapshot 2026-09-29 EU-NL-1: PRO 6000 Server $2.09 (stuck host only),
+  H100 SXM $3.49 (reliable), L40S $1.09 (48 GB, too small), B300 $7.89
+  (excluded). PRO 6000 Server was in stock in 12 other DCs incl. EU-RO-1.

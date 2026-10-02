@@ -1,6 +1,6 @@
 # Mersiv Media Hermes Agent Skills
 
-53 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
+59 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
 
 | Skill | Category | What it does |
 |---|---|---|
@@ -8,8 +8,8 @@
 | [`ai-tool-sticky-ads-layout`](ai-tool-sticky-ads-layout/) | `—` | Advanced sticky ad layout for AI tools - vertical sidebars plus smart bottom banner |
 | [`ai-tool-upgrade-checklist`](ai-tool-upgrade-checklist/) | `—` | Systematic checklist for upgrading AI tools from legal template to other domains |
 | [`brand-youtube-pipeline`](brand-video/brand-youtube-pipeline/) | `brand-video` | End-to-end [brand] video production pipeline — takes a NotebookLM-generated video, re-skins slides to dark… |
-| [`character-reference-sheet`](creative/character-reference-sheet/) | `creative` | Build character reference sheets + packs for video. |
 | [`branching-ai-film-engine`](creative/branching-ai-film-engine/) | `creative` | Build live branching AI film engines with audience voting. |
+| [`character-reference-sheet`](creative/character-reference-sheet/) | `creative` | Build character reference sheets + packs for video. |
 | [`comfyui`](creative/comfyui/) | `creative` | Generate images, video, and audio with ComfyUI — install, launch, manage nodes/models, run workflows with p… |
 | [`comfyui-video-graph-authoring`](creative/comfyui-video-graph-authoring/) | `creative` | Author and debug ComfyUI video graphs via the REST API. |
 | [`elevenlabs-narrator-revoice`](creative/elevenlabs-narrator-revoice/) | `creative` | Re-narrate a video via STT→TTS: transcribe with Replicate WhisperX, regenerate with ElevenLabs voice. |
@@ -17,12 +17,14 @@
 | [`film-craft-knowledge-base`](creative/film-craft-knowledge-base/) | `creative` | Shot grammar + film craft reference for video pipelines. |
 | [`generated-asset-verification`](creative/generated-asset-verification/) | `creative` | Verify AI-generated images and video before shipping. |
 | [`generative-media-pipeline-design`](creative/generative-media-pipeline-design/) | `creative` | Architect live/interactive generative video pipelines. |
+| [`motion-graphics`](creative/motion-graphics/) | `creative` | Use when making motion graphics videos rendered from code. |
 | [`motion-trainer-for-generative-video`](creative/motion-trainer-for-generative-video/) | `creative` | Train motion LoRAs and insert avatars in AI video. |
 | [`notebooklm-brand-edit`](creative/notebooklm-brand-edit/) | `creative` | Re-brand NotebookLM-generated videos with [brand] identity. Detects scene cuts, recolors light-themed scene… |
 | [`notebooklm-pdf-slideshow`](creative/notebooklm-pdf-slideshow/) | `creative` | Convert a NotebookLM-exported slideshow PDF into a numbered set of horizontal JPG slides plus AI-generated… |
 | [`ref-character-replacement-content-pipeline`](creative/ref-character-replacement-content-pipeline/) | `creative` | Swap a character in a video with MiniMax H3 on RunPod. |
 | [`replicate-api-generation`](creative/replicate-api-generation/) | `creative` | Generate images and video directly via Replicate REST API — model selection, image-to-image editing, first-… |
 | [`seedance-video`](creative/seedance-video/) | `creative` | Generate video with audio via Seedance on Replicate. |
+| [`social-launch-assets`](creative/social-launch-assets/) | `creative` | Launch posts and infographics for a shipped project. |
 | [`touchdesigner-mcp`](creative/touchdesigner-mcp/) | `creative` | Control a running TouchDesigner instance via twozero MCP — create operators, set parameters, wire connectio… |
 | [`video-character-replacement`](creative/video-character-replacement/) | `creative` | Swap a character in video, keeping the original motion. |
 | [`frontend-debugging-dom-issues`](frontend-debugging-dom-issues/) | `—` | Systematic approach to debug frontend issues where JavaScript can't find DOM elements or results don't display |
@@ -31,6 +33,7 @@
 | [`skill-backup`](github/skill-backup/) | `github` | Back up the skill library to a sanitized GitHub repo. |
 | [`paid-resource-preflight`](mlops-cloud/paid-resource-preflight/) | `mlops-cloud` | Check account state before provisioning paid cloud. |
 | [`runpod-pods`](mlops-cloud/runpod-pods/) | `mlops-cloud` | RunPod GPU pods: launch on a network volume, check what is running, stop or terminate. |
+| [`system-one-decision-models`](mlops/system-one-decision-models/) | `mlops` | Use for Jev/Clef decision models: API, self-host, tuning. |
 | [`ai-cover-songs`](music-creation/ai-cover-songs/) | `music-creation` | Render audio cover songs via Replicate, no GPU needed. |
 | [`audio-analysis-and-mixing`](music-creation/audio-analysis-and-mixing/) | `music-creation` | Measure tempo/key/stems and mix audio with ffmpeg. |
 | [`audio-stem-production`](music-creation/audio-stem-production/) | `music-creation` | Stem-split, restyle, and remux audio with ffmpeg. |
@@ -51,10 +54,13 @@
 | [`ai-tool-deployment-troubleshooting`](software-development/ai-tool-deployment-troubleshooting/) | `software-development` | Diagnose and fix failing Vercel builds and AI tool deploys. |
 | [`ai-tool-portfolio-builder`](software-development/ai-tool-portfolio-builder/) | `software-development` | Build multiple AI-powered tools rapidly using a proven template approach for maximum ad revenue generation |
 | [`debugging-production-ai-tools`](software-development/debugging-production-ai-tools/) | `software-development` | Systematic approach to debug failing AI-powered web applications with multiple potential issues |
+| [`developer-tool-prd`](software-development/developer-tool-prd/) | `software-development` | Write PRDs for dev tools and AI apps, then build v1. |
 | [`hermes-plugin-development`](software-development/hermes-plugin-development/) | `software-development` | Build and E2E-test standalone Hermes Agent plugins. |
 | [`professional-legal-page-separation`](software-development/professional-legal-page-separation/) | `software-development` | Create comprehensive, compliant Privacy Policy and Terms of Service pages separated from main application c… |
 | [`schema-validated-llm-generation`](software-development/schema-validated-llm-generation/) | `software-development` | LLM generates structured state; app owns canon. |
+| [`voice-agent-apps`](software-development/voice-agent-apps/) | `software-development` | Build voice-agent apps with memory, dashboards, deploys. |
 | [`template-based-ai-tool-development`](template-based-ai-tool-development/) | `—` | Build AI tools by cloning a working one, not from scratch. |
+| [`browser-arcade-games`](web-development/browser-arcade-games/) | `web-development` | Build, test, and ship small canvas games for PC and phone. |
 | [`cookie-consent-integration`](web-development/cookie-consent-integration/) | `web-development` | Add GDPR/CCPA compliant cookie consent banners to AI-powered websites with proper AdSense integration |
 | [`website-content-migration`](web-development/website-content-migration/) | `web-development` | Rebuild a live site — crawl CMS, keep links and images. |
 

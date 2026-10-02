@@ -70,7 +70,12 @@ changes the download list — one more reason a substitution needs the user's ye
 
 ## Secrets on a rented pod
 
-Writing an API key to a pod/volume is the user's call, not a setup step. An
-approval timeout on it is a no: stop, do not retry by another route. Recommend
-a dedicated revocable key; write via stdin to a `chmod 600` file on the volume;
-read from the environment at runtime; never put it in workflow JSON or widgets.
+Writing an API key to a pod or volume is the user's call, not a setup step. An
+approval timeout on it counts as a no: stop, and don't retry by another route.
+Recommend a dedicated revocable key. Write it via stdin to a `chmod 600` file
+on the **container disk (`/root`)**, not the volume. The MooseFS volume ignores
+chmod, so a 600 file read back as 666. Read the key from the environment at
+runtime, and never put it in workflow JSON or widgets.
+
+CPU pods, moving a volume to another DC, and stuck placements are in
+`runpod-cpu-pods-and-volume-moves.md`.

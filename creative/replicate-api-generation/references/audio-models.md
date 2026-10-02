@@ -121,6 +121,36 @@ no 60-second ceiling.
 
 ---
 
+## Music beds for edits: generate a steady bed, place the hits in code
+
+`stability-ai/stable-audio-2.5` (official, $0.20/file, inputs `prompt`,
+`duration` 1–190, `steps` 4–8, `cfg_scale` 1–25, `seed`) is good for trailer
+beds. **It does not follow timestamps in the prompt.** A 60 s prompt naming
+8 cue times ("drop at 0:06, near-silence at 0:27.5 …") came back at 60 BPM,
+with −62 dB dead air at 15 s and 30 s, and no hits near the cues.
+
+What worked (3 calls, $0.60):
+1. **Bed:** "continuous … at a steady 120 BPM, one unbroken track with no
+   silence and no breaks, … steady energy throughout". Ask for ~4 s more
+   than needed, since it can open with silence.
+2. **SFX, separate calls:** a 4 s "single huge cinematic trailer impact
+   hit … isolated sound effect on silence, no music", and a 4 s "riser
+   whoosh that builds for three seconds and ends in a sharp suck-in".
+3. **Measure, don't trust:** find the bed's real grid by scoring an onset
+   envelope on candidate beat grids (100–140 BPM, 10 ms phase steps). It
+   measured **120.2 BPM, first beat at 4.18 s**. Then `atempo` it to the exact
+   BPM and trim so the reel starts on a beat. Find the time each SFX peaks
+   (the impact peaked at 0.18 s, the riser at 3.96 s), then `adelay` each one
+   so its PEAK lands on the cut.
+4. Duck the bed under the calm shot, fade it under the end card, then
+   `amix normalize=0` and `loudnorm I=-14 TP=-1`. That measured −14.3 LUFS
+   with no silent windows.
+
+`librosa` wasn't installed; a numpy spectral-flux onset plus a grid search
+was enough. The working mixer is in `templates/relay_assemble.py`.
+
+---
+
 ## Decide on the transform first: preserve vs regenerate
 
 Before picking any cover tool, settle which of two different jobs is wanted.

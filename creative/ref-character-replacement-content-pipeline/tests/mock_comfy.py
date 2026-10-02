@@ -134,6 +134,14 @@ def execute(pid, api):
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"testsrc2=s={w or 320}x{h or 240}:r=24:d=1",
                         "-pix_fmt", "yuv420p", str(d / fn)], check=True)
         outs[str(i)] = {"videos": [{"filename": fn, "subfolder": sub, "type": "output"}]}
+    # Real ComfyUI also lists the LOADED video in history outputs, typed "input"
+    # (a load-node preview), after the SaveVideo entry. Taking vids[-1] without
+    # checking type picked the input and crashed the upscale lane on 2026-09-28.
+    for n in api.values():
+        src = n["inputs"].get("file") if n["class_type"] == "LoadVideo" else \
+              n["inputs"].get("video") if n["class_type"] == "VHS_LoadVideo" else None
+        if isinstance(src, str):
+            outs["zz_input_preview"] = {"videos": [{"filename": src, "subfolder": "", "type": "input"}]}
     for n in api.values():
         if n["class_type"] == "PreviewAny":
             outs["p"] = {"text": ["subject_definitions: mock\nretention_analysis: mock"]}

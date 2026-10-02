@@ -24,7 +24,15 @@ POD_ID=$(cat "$DATA/pod_id" 2>/dev/null || echo "${REFSWAP_POD_ID:-}")
 
 python3 "$POD_PY" balance
 started=0
-if python3 "$POD_PY" info "$POD_ID" 2>/dev/null | python3 -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if d.get('id') and d.get('gpuCount',1)>=$GPUS else 1)"; then
+# Restart the existing pod ONLY if its GPU is on the allowed list. Without this
+# a stopped H100 pod got restarted even when the user said "PRO 6000 only".
+# Unknown GPU type (REST sometimes omits it) = don't restart; create instead.
+OKLIST=$(printf '%s\n' "${PREFERRED[@]}" "${ALLOW[@]}")
+if python3 "$POD_PY" info "$POD_ID" 2>/dev/null | OKLIST="$OKLIST" python3 -c "
+import json,os,sys
+d=json.load(sys.stdin); ok=set(os.environ['OKLIST'].splitlines())
+g=(d.get('machine') or {}).get('gpuTypeId') or d.get('gpuTypeId') or (d.get('gpu') or {}).get('id') or ''
+sys.exit(0 if d.get('id') and d.get('gpuCount',1)>=$GPUS and g in ok else 1)"; then
   echo "== starting existing pod $POD_ID"
   python3 "$POD_PY" start "$POD_ID" && { started=1; touch "$DATA/pod_created"; } || echo "   start failed (host has no free GPU?)"
 fi
@@ -49,7 +57,24 @@ if [ $started = 0 ]; then
 fi
 [ $started = 1 ] || { echo "NO GPU AVAILABLE on the preferred list. Re-run with --allow-gpu \"<id>\" after the user OKs the price."; exit 2; }
 
-python3 "$POD_PY" wait "$POD_ID" --timeout 600
+# A placed pod that never gets a container/IP is a stalled host (2026-09-29:
+# PRO 6000 <pod-id-1> sat 10 min with runtime=null and billed ~$0.20;
+# healthy pods here reach RUNNING in 15-30 s). Don't wait it out and don't
+# abort the session: terminate it (verified gone) and exit 3 so the poller
+# keeps polling for a different host. Stop is not enough: restarting a
+# stopped pod lands on the same stuck machine.
+WAIT_S=${WAIT_S:-480}
+if ! python3 "$POD_PY" wait "$POD_ID" --timeout "$WAIT_S"; then
+  echo "== pod $POD_ID never started (no container/IP after ${WAIT_S}s): host stall, terminating"
+  python3 "$POD_PY" terminate "$POD_ID" || true
+  if python3 "$POD_PY" info "$POD_ID" 2>/dev/null | python3 -c "import json,sys
+try: d=json.load(sys.stdin)
+except Exception: d={}
+sys.exit(0 if not d.get('id') else 1)"; then
+    echo "   terminated + verified gone"; rm -f "$DATA/pod_created" "$DATA/pod_id"; exit 3
+  fi
+  echo "   terminate NOT confirmed; treating as a live pod"; exit 1
+fi
 INFO=$(python3 "$POD_PY" info "$POD_ID")
 read -r IP PORT RATE GPU <<<"$(echo "$INFO" | python3 -c "
 import json,sys; d=json.load(sys.stdin); pm=d.get('portMappings') or {}

@@ -131,6 +131,25 @@ one wired up. Confirm the interpretation before spending.
   is billing above the current going rate.
 - **Ignoring an idle running resource** because the new request felt like a
   fresh start. Check utilization; 0% for hours is the signal.
+- **Renting a GPU for work that doesn't need one.** Installs, downloads,
+  volume inventory and cross-region copies run on CPU pods ($0.06–0.12/hr,
+  and they can attach network volumes). The user asked for this explicitly:
+  set up on CPU, rent the GPU only for the test. Price the CPU path first in
+  any setup or migration plan.
+- **"Move the volume" has no API.** Network volumes can't be migrated. It's a
+  copy into a new volume in another DC. Scope it as its own job with a
+  keep/drop inventory, and pick a target DC that stocks both the preferred GPU
+  and a fallback.
+- **A pod that's "RUNNING" with `runtime: null` is a stuck host.** Terminate
+  it, don't stop it. A retry can land on the same `machineId`; stop after the
+  second stall on the same machine and offer options.
+- **A GPU restriction must cover restarts, not just creates.** After the user
+  said "PRO 6000 only", our bring-up still tried `start <existing pod>` first,
+  and the existing stopped pod was an H100. That would have been a silent
+  substitution through the back door. Filter restarts by the pod's GPU against
+  the allow-list, pass an explicit EMPTY fallback list (an unset variable fell
+  back to the H100 defaults), and test both paths with a stubbed API before
+  launching.
 - **Oversized inline shell payloads get hard-blocked.** Long one-liner `curl`
   + GraphQL invocations trip the command parser blocklist. Write the probe to
   a real script file and run that instead — it is also reusable.
@@ -144,6 +163,10 @@ for the RunPod inventory / region-stock pass, with a worked example.
 volume (S3 prefix walks, first-boot SSH checks, testing venvs), quota checks
 before large downloads, the huggingface_hub<2.0 pin, quantisation-follows-GPU,
 and handling API keys on a rented pod.
+
+`references/runpod-cpu-pods-and-volume-moves.md` — CPU pod create fields,
+flavor price/stock query (`specifics` + `instanceId`), copying a volume to
+another DC, which DCs have S3, and how to handle a stuck placement.
 
 ## Verification
 

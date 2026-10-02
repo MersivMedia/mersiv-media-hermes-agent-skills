@@ -12,8 +12,30 @@ them.
 | `bytedance/seedance-1-lite` | ≤12s | `image`, `last_frame_image`, 1–4 `reference_images` |
 | `minimax/h3` (Replicate) | — | `first_frame_image`, `reference_image_urls` |
 | MiniMax H3 / H3 Max (fal) | 5–15s | first+last frame, reference-to-video |
+| `bytedance/seedance-2.5` (Aug 2026) | ≤**30s**; editing mode requires `duration: -1` | `image`/`last_frame_image`, up to **30** `reference_images`, **10** `reference_videos` (≤30s total) |
 
-**15 seconds is the ceiling everywhere.** Any plan written around 25-second shots is
+### Live prices, 2026-09-28 (per output second)
+
+| Model | Tier | $/s |
+|---|---|---|
+| `minimax/h3` | 768P / 2K | 0.08 / 0.13 (same price whether or not a video goes in) |
+| `bytedance/seedance-2.5` | 480p / 720p, **no video input** | 0.1028 / 0.2312 |
+| `bytedance/seedance-2.5` | 480p / 720p, **with a video input (edit)** | 0.4304 / **0.9676** |
+| `bytedance/seedance-2.0` | 480p → 4K | 0.08–0.10 up to 1.00–1.25 |
+
+Seedance 2.5 tops out at **720p**. H3 does 2K and doesn't charge extra for
+video-in, so for any edit-heavy plan (restyling one base clip N times), H3 is
+~7x cheaper. In a 12-shot reel it came to ~$17.50 on H3 2K vs ~$72 on
+Seedance 2.5. Both need ≥4 s clips, so a restyle can't be priced per
+half-second slice. Edit the full base clip, then cut the slice.
+
+Get prices from the model page's JSON, not by guessing. Fetch
+`https://replicate.com/<owner>/<model>` with a browser User-Agent,
+`html.unescape` it, then regex the `"criteria": [...] ... "prices": [...]`
+blocks. The `criteria` (`model variant`, `target resolution`) are what tell
+tiers apart. The API has no pricing endpoint.
+
+**15 seconds is the ceiling on every model except Seedance 2.5.** Any plan written around 25-second shots is
 wrong by ~3x on cost. Confirm max duration from the live schema before designing shot
 structure:
 

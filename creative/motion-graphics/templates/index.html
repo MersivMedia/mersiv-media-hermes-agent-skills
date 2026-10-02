@@ -1,0 +1,71 @@
+<!doctype html>
+<!-- index.html — the film. window.seek(t) paints the exact frame for time t.
+     Size comes from the URL (?w=1080&h=1920) so one timeline renders every format.
+     Rules: no CSS transitions, no setTimeout, no requestAnimationFrame in render mode,
+     no state carried between frames, seeded noise only. -->
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#141413;overflow:hidden}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script type="module">
+import { clamp, sp, track, swapAlpha, rng, layout, pulse } from './lib/motion.js';
+
+const q = new URLSearchParams(location.search);
+const W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const g = cv.getContext('2d');
+const L = layout(W, H), u = L.u;
+
+// Edit these per film. BEATS is replaced by beats.json content at build time or fetched below.
+const FILM = { dur: 6, bg: '#141413', ink: '#F0EEE6', accent: '#D97757',
+  display: '700 {px}px "Inter", system-ui, sans-serif', ui: '500 {px}px "Inter", system-ui, sans-serif' };
+const font = (tpl, px) => tpl.replace('{px}', Math.round(px));
+let BEATS = { bpm: 120, beats: Array.from({ length: 64 }, (_, i) => i * 0.5) };
+
+// One object per shot: { from, to, draw(t, T) } with t = local time, T = global time.
+const SCENES = [
+  { from: 0, to: 3, draw(t) {                                   // kinetic title on the downbeat
+      const s = sp(t - 0.05, 'heavy');
+      g.save(); g.translate(L.cx, L.cy);
+      g.scale(0.7 + 0.3 * s, 0.7 + 0.3 * s);
+      g.globalAlpha = clamp(t * 6);
+      g.fillStyle = FILM.ink; g.font = font(FILM.display, u(190));
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('MOTION', 0, 0);
+      g.fillStyle = FILM.accent; const bw = u(640) * sp(t - 0.25, 'snappy');
+      g.fillRect(-bw / 2, u(120), bw, u(18));
+      g.restore();
+  }},
+  { from: 3, to: 6, draw(t, T) {                               // staggered grid that pulses on the beat
+      const r = rng(7), cols = L.landscape ? 10 : 6, rows = L.landscape ? 4 : 8;
+      const cell = Math.min((W - 2 * L.safe.x) / cols, (H - 2 * L.safe.y) / rows);
+      const ox = (W - cols * cell) / 2 + cell / 2, oy = (H - rows * cell) / 2 + cell / 2;
+      const p = pulse(T, BEATS, 10);
+      for (let i = 0; i < cols * rows; i++) {
+        const x = ox + (i % cols) * cell, y = oy + Math.floor(i / cols) * cell;
+        const s = sp(t - i * 0.02 - r() * 0.1, 'snappy') * (0.82 + 0.08 * p);
+        g.fillStyle = i % 7 ? FILM.ink : FILM.accent;
+        g.fillRect(x - cell * 0.4 * s, y - cell * 0.4 * s, cell * 0.8 * s, cell * 0.8 * s);
+      }
+  }},
+  // ... more scenes: one object per shot, appended here
+];
+
+function draw(T) {
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1; g.fillStyle = FILM.bg; g.fillRect(0, 0, W, H);
+  for (const s of SCENES) if (T >= s.from && T < s.to) { g.save(); s.draw(T - s.from, T); g.restore(); }
+}
+
+window.FILM = FILM;
+window.ready = (async () => {
+  try { const r = await fetch('./beats.json'); if (r.ok) BEATS = await r.json(); } catch {}
+  await document.fonts.ready;
+  return true;
+})();
+window.seek = (t) => { draw(t); return true; };
+
+// Live preview in a normal browser; off during headless render (navigator.webdriver is true there).
+if (!navigator.webdriver) {
+  window.ready.then(() => { const t0 = performance.now();
+    (function loop() { draw(((performance.now() - t0) / 1000) % FILM.dur); requestAnimationFrame(loop); })(); });
+}
+</script>

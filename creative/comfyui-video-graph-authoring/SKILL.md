@@ -1,7 +1,7 @@
 ---
 name: comfyui-video-graph-authoring
 description: Author and debug ComfyUI video graphs via the REST API.
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos]
@@ -56,7 +56,7 @@ validation and dies at execution.
 | `scripts/probe_node_schema.py` | Dump a node's real types, tooltips, and enum options; find which loader exposes a model file; list scanned model folders |
 | `references/character-replacement-node-selection.md` | Measured Wan node comparison (VACE / Animate / SCAIL-2) + full SCAIL-2 wiring and model list |
 | `references/graph-wiring-failures.md` | Five wiring failure classes with real error transcripts and fixes |
-| `references/gpu-pod-provisioning.md` | RunPod deploy traps, disk-quota gotchas, browser access via Caddy |
+| `references/gpu-pod-provisioning.md` | RunPod deploy traps, getting a GPU when stock is thin (poll, error meanings, stop-on-failure), container-disk rebuild (no rsync, chmod ignored), basic-auth nginx on RunPod's image, Caddy fallback, idle-cost discipline |
 
 ## Quick Reference
 
@@ -81,7 +81,7 @@ Full transcripts in `references/graph-wiring-failures.md`. Summary:
 | Symptom | Cause |
 |---|---|
 | `does not have a heatmap_head` | detector model wired where a task model was wanted |
-| `mat1 and mat2 shapes cannot be multiplied (512x4096 and 1024x256)` | conditioning from the wrong text encoder (umt5 4096-dim into a 1024-dim path) |
+| `mat1 and mat2 shapes cannot be multiplied (512x4096 and 1024x256)` | conditioning from the wrong text encoder (umt5 4096-dim into a 1024-dim path). Same class with SAM3: text encoded by a video model's Qwen3-VL (5120-dim) → `(1x5120 and 1024x256)`. Load SAM3 through `CheckpointLoaderSimple` and use **its own** CLIP output |
 | `Either initial_mask or conditioning must be provided` | schema-optional input that is runtime-required |
 | model absent from every loader combo | file in a folder ComfyUI does not scan |
 | runs but output is wrong | correct types, wrong *semantics* (binary mask where coloured per-identity was wanted) |
@@ -100,6 +100,20 @@ for nd in (entry.get("outputs") or {}).values():
         for item in nd.get(key) or []:
             ...
 ```
+
+**Filter history outputs by `type == "output"`.** `/history` also lists the
+*loaded* input clip (typed `"input"`, a load-node preview) and temp previews
+(`"temp"`), sometimes after the real SaveVideo entry. Taking "the last .mp4"
+picked the input clip and crashed an upscale lane with FileNotFound. Also
+check the file exists and prefer a filename matching your `filename_prefix`.
+Any mock ComfyUI used for tests must emit those extra entries too, or it
+hides this bug (it did, through a green 50-check suite).
+
+**Websocket silence is not a dead connection.** A node that waits on an
+external API (an LLM prompt node) can be silent for minutes. Treating a 15 s
+`recv` timeout as "disconnected" fell back to history polling, which lost
+per-node and per-step timings and billed the whole render to that one node.
+On timeout, keep waiting; only a real close or error ends the loop.
 
 ## How to Run
 
@@ -194,6 +208,51 @@ and hide the values you need.
 9. **Cache sharing makes reruns look faster than they are.** A rerun that
    changes only one input reuses cached nodes and may finish in half the
    time. Do not quote that as the cost of a fresh run.
+
+10. **UI→API conversion must handle V3 nested dropdowns.** Current core nodes
+    (e.g. `SaveVideo.format`) declare `COMFY_DYNAMICCOMBO_V3`: the chosen
+    option carries its own sub-inputs, keyed with dots (`format`,
+    `format.codec`). A flat converter that walks `widgets_values` against
+    top-level inputs only drops them. `/prompt` still accepts the graph, and
+    the node fails at **execution**, after a full 16-minute render:
+    `SaveVideo.execute() missing 1 required positional argument: 'format'`.
+    Recurse into the selected option's `inputs.required` and consume one
+    widget value per nested input. Convert against live `/object_info`,
+    never a hand-kept widget order. Re-queueing after the fix reuses the
+    cache and only re-runs the save.
+
+11. **Every loader is validated before a run, even on branches the current
+    settings bypass.** A `LoadImage` default pointing at a missing file fails
+    the whole prompt. Default every loader to a file that exists in `input/`.
+
+12. **Two ComfyUI servers on one install** (to run render and upscale as
+    separate queues, because one server executes one prompt at a time) each
+    need their own `--port`, `--user-directory` and `--temp-directory`.
+    Otherwise they share the user DB and temp files. On one GPU, compute is
+    time-sliced, so the gain comes only from each lane's idle gaps; measure
+    peak VRAM before assuming both fit.
+
+13. **Read the node source before promising a toggle saves compute.** Some
+    joint models (MiniMax H3) generate audio in the same latent as video, so
+    "audio off" only skips the decode and mux: seconds, not minutes. Use lazy
+    inputs (`{"lazy": True}` + `check_lazy_status`) so a skipped branch
+    doesn't execute at all.
+
+14. **Test harness for graph code without a GPU:** a small mock server
+    serving `/object_info` (the real schemas, including V3 combos),
+    validating each submitted prompt's inputs against them, and writing
+    fake outputs catches conversion, override and naming bugs for free.
+    It can't catch problems specific to the target image (missing binaries,
+    nginx, drivers). Say so when reporting it green.
+
+15. **Exported UI workflows carry a stale `widgets_values_named` copy** of each
+    node's widgets. ComfyUI never reads it (it uses `widgets_values`), so
+    editing the real widgets leaves the old values in the file. A supplied
+    workflow's copy kept a third-party NSFW finetune filename and an explicit
+    example prompt after both were replaced, and it shipped in a public repo.
+    Builder scripts should `n.pop("widgets_values_named", None)` for every
+    node, then `assert` banned strings are absent from `json.dumps(wf)`. When
+    auditing a workflow, grep the whole JSON, not only the visible fields.
 
 ## Verification
 

@@ -22,7 +22,7 @@ POD_PY=${REFSWAP_POD_PY:-~/.hermes/skills/mlops-cloud/runpod-pods/scripts/pod.py
 SYNC_TIMEOUT=${SYNC_TIMEOUT:-600}
 LOG=$DATA/poll.log; ST=$DATA/poll.status
 [ -z "${REFSWAP_TEST:-}" ] && { set -a; . ~/.hermes/.env; set +a; }
-T0=$(date +%s); n=0; POD_LIVE=0; STOPPED=0
+T0=$(date +%s); n=0; POD_LIVE=0; STOPPED=0; STALLS=0; MAX_STALLS=${MAX_STALLS:-3}
 
 stop_pod() {   # idempotent; called from every exit path once a pod exists
   [ "$POD_LIVE" = 1 ] && [ "$STOPPED" = 0 ] || return 0
@@ -54,9 +54,21 @@ while :; do
     echo "GAVE UP after ${MAX_HOURS}h, $n attempts, no approved GPU" | tee -a "$LOG" > "$ST"; exit 2
   fi
   rm -f "$DATA/pod_created"
-  bash "$UP" --layout serial --sage 0 \
-       --allow-gpu "NVIDIA H100 PCIe" --allow-gpu "NVIDIA H100 80GB HBM3" > "$DATA/up_attempt.log" 2>&1
+  # ALLOW_GPUS: extra GPU ids beyond the PRO 6000 list, "|"-separated.
+  # ALLOW_GPUS="" = RTX PRO 6000 only (user, 2026-09-29).
+  ALLOW_ARGS=(); IFS='|' read -ra _g <<<"${ALLOW_GPUS-NVIDIA H100 PCIe|NVIDIA H100 80GB HBM3}"
+  for g in "${_g[@]}"; do [ -n "$g" ] && ALLOW_ARGS+=(--allow-gpu "$g"); done
+  bash "$UP" --layout serial --sage 0 "${ALLOW_ARGS[@]}" > "$DATA/up_attempt.log" 2>&1
   rc=$?
+  if [ $rc = 3 ]; then       # placed pod never started; refswap_up terminated it (verified)
+    STALLS=$((STALLS+1)); POD_LIVE=0
+    echo "$(date -u +%H:%M) attempt $n: placed pod never started, terminated (stall $STALLS/$MAX_STALLS)" >> "$LOG"
+    grep -E "creating|never started|terminated" "$DATA/up_attempt.log" | sed 's/^/   /' >> "$LOG"
+    if [ "$STALLS" -ge "$MAX_STALLS" ]; then
+      echo "GAVE UP after $STALLS placement stalls (pods placed but never started)" | tee -a "$LOG" > "$ST"; exit 1
+    fi
+    sleep "$POLL_S"; continue
+  fi
   # refswap_up writes pod_created the moment a pod is placed/started, so a
   # later bring-up failure still counts as a live, billing pod.
   [ -f "$DATA/pod_created" ] && POD_LIVE=1
@@ -73,7 +85,7 @@ while :; do
 done
 
 D=$(date +%F); export PERF_DATE=$D
-BATCHES=("${D}_perf-a-serial" "${D}_perf-b-sage" "${D}_perf-c-shared")
+BATCHES=("${A_BATCH:-${D}_perf-a-serial}" "${D}_perf-b-sage" "${D}_perf-c-shared")
 GPU=$(grep -m1 "^== pod" "$DATA/up_attempt.log")
 echo "RUNNING session on: $GPU (placed after $n attempts)" > "$ST"
 MAX_GPU_MIN=${MAX_GPU_MIN:-90} bash "$PERF" "$SRC" "$REF" >> "$LOG" 2>&1

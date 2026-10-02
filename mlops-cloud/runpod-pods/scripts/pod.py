@@ -147,12 +147,17 @@ def cmd_create(a):
     body = {
         "name": a.name,
         "imageName": a.image,
-        "gpuTypeIds": [a.gpu],
-        "gpuCount": a.gpu_count,
         "containerDiskInGb": a.disk,
         "ports": a.ports.split(","),
         "env": {"PUBLIC_KEY": pubkey},
     }
+    if a.cpu:
+        # CPU pod: e.g. --cpu cpu3c-2-4 (flavor cpu3c, 2 vCPU, 4 GB). ~$0.06/hr.
+        # Mounts network volumes like a GPU pod; use for setup / copies.
+        flavor, vcpu = a.cpu.split("-")[0], int(a.cpu.split("-")[1])
+        body.update({"computeType": "CPU", "cpuFlavorIds": [flavor], "vcpuCount": vcpu})
+    else:
+        body.update({"gpuTypeIds": [a.gpu], "gpuCount": a.gpu_count})
     if a.volume:
         body["networkVolumeId"] = a.volume
     if a.dc:
@@ -166,7 +171,7 @@ def cmd_create(a):
     else:
         rate = p.get("costPerHr") or 0
         secure = (p.get("machine") or {}).get("secureCloud")
-        print(f"created pod {p['id']}  ({a.gpu})")
+        print(f"created pod {p['id']}  ({a.gpu or a.cpu})")
         print(f"  rate      : ${rate:.2f}/hr  "
               f"({'SECURE' if secure else 'community'} cloud)")
         print(f"  ssh key   : injected at creation")
@@ -214,6 +219,21 @@ def cmd_url(a):
     print(f"https://{a.pod_id}-{a.port}.proxy.runpod.net")
 
 
+def cmd_start(a):
+    """Resume a STOPPED pod. Same pod id, so the proxy URL and injected SSH key
+    survive. Fails if the host no longer has a free GPU of that type; the
+    caller should then create a new pod on the same network volume."""
+    p = rest(f"/pods/{a.pod_id}/start", "POST")
+    if isinstance(p, dict) and (p.get("error") or p.get("errors")):
+        sys.exit(f"start failed: {json.dumps(p)[:400]}")
+    print(f"start requested for {a.pod_id}; run `wait` next")
+
+
+def cmd_info(a):
+    """Raw pod JSON (status, GPU, costPerHr, ports) for scripts."""
+    print(json.dumps(rest(f"/pods/{a.pod_id}")))
+
+
 def cmd_stop(a):
     rest(f"/pods/{a.pod_id}/stop", "POST")
     print(f"stopped {a.pod_id} — GPU released and GPU billing halted")
@@ -249,7 +269,9 @@ def main():
     vd.add_argument("volume_id")
 
     c = sub.add_parser("create"); c.set_defaults(fn=cmd_create)
-    c.add_argument("--gpu", required=True, help='e.g. "NVIDIA A40"')
+    g = c.add_mutually_exclusive_group(required=True)
+    g.add_argument("--gpu", help='e.g. "NVIDIA A40"')
+    g.add_argument("--cpu", help='CPU pod instance, e.g. cpu3c-2-4 (2 vCPU/4 GB, ~$0.06/hr)')
     c.add_argument("--name", default="hermes-pod")
     c.add_argument("--image", default="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04")
     c.add_argument("--disk", type=int, default=30, help="container disk GB")
@@ -270,6 +292,8 @@ def main():
     u = sub.add_parser("url"); u.set_defaults(fn=cmd_url)
     u.add_argument("pod_id"); u.add_argument("port", type=int)
 
+    sa = sub.add_parser("start"); sa.set_defaults(fn=cmd_start); sa.add_argument("pod_id")
+    inf = sub.add_parser("info"); inf.set_defaults(fn=cmd_info); inf.add_argument("pod_id")
     st = sub.add_parser("stop"); st.set_defaults(fn=cmd_stop); st.add_argument("pod_id")
     t = sub.add_parser("terminate"); t.set_defaults(fn=cmd_terminate); t.add_argument("pod_id")
 

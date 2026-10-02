@@ -16,5 +16,10 @@ run transfer      bash tests/test_transfer.sh
 run transfer_root bash tests/test_transfer_root.sh
 run failpath      timeout 200 bash tests/test_failpath.sh
 run selfstop      timeout 60 python3 tests/test_selfstop.py
+run perf_fixes    timeout 120 python3 tests/test_perf_fixes.py
+run waitbatch     timeout 120 bash tests/test_waitbatch.sh
+run recover       timeout 60 bash tests/test_recover.sh
+run gpu_allow     timeout 150 bash tests/test_gpu_allowlist.sh
+run stall         timeout 200 bash tests/test_stall.sh
 echo "ALL: $([ $fail = 0 ] && echo PASS || echo FAIL)"
 exit $fail

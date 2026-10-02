@@ -107,6 +107,7 @@ class Comfy:
             import websocket  # websocket-client, installed by bootstrap
             ws = websocket.create_connection(
                 self.host.replace("http", "ws", 1) + f"/ws?clientId={cid}", timeout=15)
+            ws.settimeout(5)            # short recv timeout; silence is handled in the loop
         except Exception:
             ws = None
         pid = self.post("/prompt", {"prompt": api, "client_id": cid})["prompt_id"]
@@ -121,12 +122,24 @@ class Comfy:
                 node_seconds[cur] = {"class": cls, "seconds": round(prev + now - cur_t, 2)}
 
         done = False
+        last_hist = time.time()
         while not done and time.time() - t0 < timeout:
             if ws is not None:
+                # A recv TIMEOUT is silence, not a dead socket. The 15 s connect
+                # timeout also applies to recv, and the Director's Claude call is
+                # silent for longer than that: on 2026-09-28 every render dropped
+                # to HTTP polling there, so no node/step events arrived and the
+                # whole render was billed to H3PromptDirector (median_step empty).
                 try:
                     raw = ws.recv()
-                except Exception:
+                except Exception as ex:
                     raw = None
+                    if "Timeout" in type(ex).__name__ or isinstance(ex, TimeoutError):
+                        if time.time() - last_hist > 30:       # safety net: missed final event
+                            last_hist = time.time()
+                            if pid in self.get(f"/history/{pid}"):
+                                done = True
+                        continue
                     try:
                         ws.close()
                     except Exception:
@@ -197,6 +210,27 @@ class Comfy:
             for txt in nd.get("text") or []:
                 res["text"].append(txt if isinstance(txt, str) else json.dumps(txt))
         return res
+
+
+def pick_output(outputs: list, root, prefix: str | None = None):
+    """The saved mp4 from a history outputs list, as an existing Path, or None.
+
+    History also lists LOADED videos (type "input", e.g. a load-node preview)
+    and temp previews. Taking outputs[-1] blindly picked the input clip on
+    2026-09-28 and crashed the upscale lane (FileNotFoundError in output/).
+    Only type=="output" counts; a prefix match wins; the file must exist."""
+    from pathlib import Path
+    cands = [o for o in outputs if str(o.get("filename", "")).endswith(".mp4")
+             and o.get("type", "output") == "output"]
+    if prefix:
+        want = prefix.rsplit("/", 1)[-1]
+        pref = [o for o in cands if str(o["filename"]).startswith(want)]
+        cands = pref or cands
+    for o in reversed(cands):
+        p = Path(root) / "output" / o.get("subfolder", "") / o["filename"]
+        if p.exists():
+            return p
+    return None
 
 
 def median_step_seconds(step_times: list, sampler_node: str | None = None) -> float | None:

@@ -121,6 +121,12 @@ When a design needs character identity locks, generate them with `character-refe
   existing proxy, making identity minting cost something, path allowlisting,
   and why a resumed process must regenerate every derived artifact. **Load this
   before exposing a screening publicly.**
+- Showcase / sizzle-reel editing: the **rapid-change sequence** (one base
+  motion, N full-clip restyles, beat-sliced on shared timecodes into one
+  continuous shot) and the H3-vs-Seedance-2.5 cost model live in
+  `replicate-api-generation` → `references/rapid-change-sequence.md` and
+  `references/video-model-apis.md`. For any multi-shot reel, send a cost table
+  and get approval before the first generation.
 
 ## Rule 0: verify provider constraints BEFORE writing architecture
 

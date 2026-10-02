@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from comfy_api import Comfy, median_step_seconds  # noqa: E402
+from comfy_api import Comfy, median_step_seconds, pick_output  # noqa: E402
 
 # Paths default to the pod layout; env overrides exist only for offline tests.
 COMFY = Path(os.environ.get("REFSWAP_COMFY", "/workspace/ComfyUI"))
@@ -202,14 +202,12 @@ def main():
                          out.get("exec_end_epoch", time.time()))
         render_path = None
         if out["status"] == "ok":
-            vids = [o for o in out["outputs"] if str(o.get("filename", "")).endswith(".mp4")]
-            if vids:
-                o = vids[-1]
-                p = COMFY / "output" / o.get("subfolder", "") / o["filename"]
+            p = pick_output(out["outputs"], COMFY)
+            if p:
                 render_path = B / "renders" / f"{stem}.mp4"
                 shutil.copyfile(p, render_path)
             else:
-                out["status"], out["error"] = "error", "no mp4 in outputs"
+                out["status"], out["error"] = "error", f"no saved mp4 in outputs: {out['outputs']}"[:600]
 
         sc = {
             "job": job, "stem": stem, "batch": B.name, "tag": a.tag, "status": out["status"],
