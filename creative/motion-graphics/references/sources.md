@@ -1,5 +1,34 @@
 # Sources and further reading
 
+## Source 2 (v2.0.0): Raphaël Aubry / Howseen
+
+"i made 10+ motion videos with opus 5.5 in 3 days. here's the whole pipeline (open source)", X Article,
+https://x.com/raphaelaubryy/status/2104502744010629269 (read via fxtwitter 2026-10-02), and its repo
+https://github.com/howseen-ai/claude-motion-design (MIT, Copyright 2026 Howseen AI (Raphaël Aubry);
+read at commit 3d90d349ef3fdde9b7e89de4df4a2159c9e8697f, 2026-10-02).
+
+Taken and adapted (rewritten for this box: Node renderer, no imageio_ffmpeg, no Mac paths):
+- 180° shutter subframes, cut-aware; draft mode; per-beat stills; frame-count check; BT.709 TV-range encode;
+  pops + one-frame-flash detector; loop check in position AND velocity; WEBGL=1 SwiftShader flags;
+  deterministic Chromium flags; adaptive subframes; poster in frame 0; parallel time chunks; render lock
+  -> render.mjs, qc.py, poster0.sh, chunks.sh
+- Drop by band energy, 20 ms zoom, song offset; SFX on measured peak; two-pass loudnorm; VO ducking -> drop.py, mix.py
+- Camera in log zoom with beat/bar punches; floods clearing the farthest corner; masked word rise; exact-end easings;
+  spring presets (k/d); loop spring tails; micro drift -> lib/motion.js
+- Director's brief, facts.md, "Example data" labels, true captions, anti-AI-look rules, seekable third-party libs,
+  separate read-only critic, fresh-agent restatement test, preview HUD -> BRIEF.md, facts.md, STUDIO_RULES.md, index.html
+- Mixkit SFX/music crawl, svgl logos (+ simple-icons fallback), picsum (Unsplash) photos -> assets.py
+- Remake mode -> separate skill `motion-remake` (core.js, analyse/stub/render/sync/qa ported to Node + Linux fonts,
+  brand made configurable via project.json; remake_audio.py added).
+
+Not taken: Howseen brand palette/fonts/file library, Mac/Claude Code sandbox specifics, 21st.dev MCP client
+(needs a personal key, 2 free retrievals/day), YouTube meme downloading (this box's IP is blocked by YouTube).
+The article's numbers (render times, "5 versions", views) are the author's own and unverified here.
+
+Asset sources checked from this box 2026-10-02 (HTTP 200): mixkit.co SFX tag pages + assets.mixkit.co SFX previews,
+mixkit.co music genre pages, api.svgl.app, cdn.jsdelivr.net simple-icons.
+
+## Source 1 (v1.0.0): @0xMovez
 Primary source for this skill: @0xMovez (Movez), "How to build motion design studio with Opus 5.5 (Full-course)",
 X Article published 2026-09-27, https://x.com/0xmovez/status/2104216919033192746 (article id 2104196832637210624).
 Read via the fxtwitter API on 2026-10-02. The article's claims about other creators' runs (view counts, hours,

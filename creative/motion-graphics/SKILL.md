@@ -1,8 +1,8 @@
 ---
 name: motion-graphics
 description: "Use when making motion graphics videos rendered from code."
-version: 1.0.0
-author: Hermes Agent (workflow from @0xMovez's "motion design studio with Opus 5.5" course)
+version: 2.0.0
+author: Hermes Agent (workflow from @0xMovez's course + Raphaël Aubry's claude-motion-design, MIT)
 license: MIT
 platforms: [linux, macos]
 prerequisites:
@@ -10,109 +10,183 @@ prerequisites:
 metadata:
   hermes:
     tags: [motion-graphics, video, animation, canvas, showreel, launch-video, ui-morph, ffmpeg, playwright]
-    related_skills: [seedance-video, elevenlabs-narrator-revoice, generated-asset-verification, p5js, manim-video, social-launch-assets]
+    related_skills: [motion-remake, seedance-video, elevenlabs-narrator-revoice, generated-asset-verification, p5js, manim-video, social-launch-assets]
 ---
 
 # Motion graphics (code-rendered video)
 
-Covers showreels, product launch reels, animated explainers, UI morph loops and motion ads. The engine is a deterministic `seek(t)` canvas, with springs, a beat grid, synthesized audio, and a mandatory critique loop where you look at your own frames.
+## When to Use
 
-The model can't output an MP4. It writes a **program**: one `window.seek(t)` function that paints the exact frame for any time `t`. A headless browser calls it for every frame and ffmpeg encodes the result. Because nothing depends on timers, renders come out identical every time, and any fix is a code edit followed by a re-render.
+Use this for showreels, product launch films, animated explainers, motion ads, kinetic type and looping UI morphs. It also covers "make a video like this viral one".
 
-The source course's thesis: **the prompt is 10% of the video, the harness is 90%.** One-liners give a generic clip: centered text on a gradient, everything fading in, a logo at the end. What separates good output is a reference, a state list, springs, a beat grid, and the habit of **looking at your own rendered frames and fixing them**. Full prompt templates are in `references/prompts.md`; source and repos are in `references/sources.md`.
+Other skills fit better in these cases:
+- **Frame-locked 1:1 remake of an existing video:** `motion-remake`.
+- **Photoreal footage or characters:** `seedance-video`.
+- **Math or algorithm explainers:** `manim-video`.
+
+## How it works
+
+The model can't output an MP4. It writes a **program**: one `window.seek(t)` function that paints the exact frame for any time `t`. A headless browser calls it for every frame, averages subframes for motion blur, and ffmpeg encodes the result. Nothing depends on timers, so the same time always gives the same pixels. A fix is a code edit plus a re-render of only the seconds that changed.
+
+**The prompt is 10% of the video and the harness is 90%.** Both sources independently say the same thing.
+- **A one-liner gives "mid":** a centered title on a gradient, everything fading in, music and picture living separate lives.
+- **What fixes it:**
+  - a reference to borrow grammar from
+  - a director's brief with timed states
+  - a beat map with the drop on the key visual
+  - stills before renders
+  - springs instead of curves
+  - SFX on measured peaks
+  - real data or an "Example data" label
+  - **watching your own frames until every score is 8+**
+
+Prompt library: `references/prompts.md`. Sources and credits: `references/sources.md`.
 
 ## Files
 
 ```
-templates/index.html      the film: SCENES array, window.seek(t), size from ?w=&h=, live preview in a browser
-templates/lib/motion.js   spring(), SPRINGS presets, track(), indicator(), swapAlpha(), loopT(), rng(), pulse(), layout()
-templates/render.mjs      headless render → ffmpeg. --stills for PNGs, --from/--to for partial re-renders, --sub N motion blur
-templates/music.mjs       synthesized on-grid backing track + beats.json (no track supplied)
-templates/beats.py        measure a supplied track → beats.json (needs librosa in a venv)
-templates/sfx.mjs         synthesized UI SFX from cues.json (click, tick, pop, thump, whoosh, riser, chime)
-templates/mix.sh          music + SFX → -14 LUFS AAC, muxed onto the silent render (video stream copied)
-templates/qc.sh           contact.png, strip.png, phone.png, poster.png, loop_check.mp4, loop-seam diff
-templates/formats.sh      9:16, 1:1, 16:9 from one timeline
-templates/STUDIO_RULES.md house rules copied into every project (read before every change)
-scripts/new_project.sh    scaffold a project from the templates
-scripts/smoke_test.sh     end-to-end self-test of the whole pipeline
+templates/index.html       the film: SCENES, FILM {dur, cuts}, seek(t), ?w=&h= sizing, preview HUD (space/←→/shift/R/scrub/?t=)
+templates/lib/motion.js    E easings (exact 0/1 ends), P(), spring/springFZ/SPRINGS presets, track/loopTrack, indicator,
+                           swapAlpha, cyc, drift, rng (mulberry32), beat helpers, camera (log zoom + beat punches),
+                           flood (clears farthest corner), riseWords (masked word rise), fitFont, layout()
+templates/render.mjs       --stills / --beats / --draft / master; --sub N over --shutter 0.5, cut-aware, --adaptive,
+                           --scale 2 supersample, --capture dom, --from/--to; BT.709 TV range; frame-count check;
+                           fails on page errors; machine-wide render lock
+templates/chunks.sh        K parallel time chunks + lossless concat (big machines only)
+templates/drop.py          real drop by band energy (+ --zoom 20 ms, --drop/--at → beats.json with song offset)
+templates/beats.py         librosa beat/onset map (optional; needs a venv)
+templates/music.mjs        synthesized on-grid backing bed + beats.json (no track supplied)
+templates/mix.py           music offset + SFX on MEASURED PEAK + VO ducking + two-pass loudnorm -14 LUFS → mux
+templates/sfx.mjs, mix.sh  older synth-SFX + one-pass mix (kept; mix.py is preferred)
+templates/assets.py        Mixkit SFX/music search+download, svgl/simple-icons logos, picsum (Unsplash) photos
+templates/qc.py            pops, one-frame flashes, frozen runs > 1 s, loop position AND velocity
+templates/qc.sh            contact.png, strip.png, phone.png, poster.png, loop_check.mp4
+templates/poster0.sh       burn poster into frame 0 (X/Slack/Discord show frame 0, not the cover)
+templates/formats.sh       9:16 / 1:1 / 16:9 / 4:5 from one timeline, one shared mix
+templates/BRIEF.md, facts.md, review_log.md, STUDIO_RULES.md   copied into every project (docs/ + root)
+scripts/new_project.sh     scaffold;  scripts/smoke_test.sh  end-to-end self-test
 ```
 
-Runtime: `playwright-core` lives at `~/.hermes/data/motion-graphics/runtime` (render.mjs finds it automatically, or set `MOTION_RUNTIME`). Chrome is the cached Playwright `chromium_headless_shell`, or set `CHROME_PATH`. If the runtime is missing, run: `mkdir -p ~/.hermes/data/motion-graphics/runtime && cd $_ && npm init -y && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i playwright-core`.
+**Runtime:**
+- **playwright-core:** lives in `~/.hermes/data/motion-graphics/runtime`, and render.mjs finds it on its own. Override with `MOTION_RUNTIME`. To reinstall: `mkdir -p ~/.hermes/data/motion-graphics/runtime && cd $_ && npm init -y && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i playwright-core`.
+- **Chrome:** the cached `chromium_headless_shell`, or set `CHROME_PATH`.
+- **Python:** the tools need numpy + ffmpeg only. Use `/usr/bin/python3` (numpy 2.3). `beats.py` alone needs librosa in a venv.
 
 ## Workflow
 
-**0. Plan first, before writing code.** Collect the inputs:
-- product + URL, or the subject
-- duration
-- formats
-- brand colors and fonts, one accent color
-- a reference (a frame, a video, or an image folder)
-- music: a file, or "synthesize"
-- voice or mascot, if any
+**0. Brief first, no code.**
+- **Collect inputs:**
+  - product/URL or subject
+  - duration
+  - formats
+  - brand: logo, one accent, fonts
+  - a **named reference style** ("Linear launch", "Apple bumper"; never "premium modern") plus reference files
+  - music: a file, Mixkit, or synthesize
+  - VO or mascot
+- **If the user's brief has an `<inputs>` block**, ask for exactly those inputs, recommended defaults first.
+- **Fill the documents:** `docs/BRIEF.md` (timed states, layers, sound plan, silent one-sentence test) and `docs/facts.md` (every number with source + date).
+- **Wait for OK.** Anything paid (TTS, Seedance base shots) gets a cost estimate first.
 
-Pick the brief level (L1 one-liner → L4 director's brief, `references/prompts.md`). Write `docs/shotlist.md` on the beat grid: every shot gets its time range, what happens, the type on screen, and the SFX. **Show it to the user and wait for an OK.** Anything paid (ElevenLabs voice, Seedance base shots) gets a cost estimate before it runs.
-
-**1. Scaffold.** `bash ~/.hermes/skills/creative/motion-graphics/scripts/new_project.sh <dir>`. Work in the user's project directory, or in `~/.hermes/data/motion-graphics/projects/<name>/`, never `/tmp`. Keep one folder per brand so later films reuse the pipeline.
+**1. Scaffold.**
+- Run `bash ~/.hermes/skills/creative/motion-graphics/scripts/new_project.sh <dir>`.
+- Work in the user's project, or in `~/.hermes/data/motion-graphics/projects/<name>/`. Never `/tmp`.
+- One folder per brand. Reuse the closest earlier film instead of starting from zero.
 
 **2. Assets and reference.**
-- *Product URL:* capture real screenshots, logo, colors and fonts into `./assets` with Playwright (CDP), and list what you found. Never invent product UI.
-- *Reference video:* `ffmpeg -i refs/x.mp4 -vf fps=2 refs/frames/%03d.png`. Look at the frames and write `docs/style_guide.md`: palette as hex, type, shot lengths, transitions, camera, texture, how text enters and leaves. Take the reference's grammar, never its content.
+- **Product:** capture real UI with Playwright into `brand/screenshots/` and list what you found. Never invent screens.
+  - **Product films:** rebuild screens in code (pixel-sample one `ui-tokens` set: colours, radii, shadows, spacing) so they animate element by element. Check them side by side with the screenshots.
+  - **Paywalled UI:** ask the user for screenshots, or label a recreated UI as illustrative.
+- **Reference video:** extract `fps=2` frames and look at them. Write `docs/style_guide.md` (palette hex, type, shot lengths, transitions, camera, text in/out). Take the grammar, never the content.
+- **Free assets:** `python3 assets.py sfx whoosh`, `sfx-get <id>`, `music <genre>`, `music-get <id>`, `logo <name>`, `photo <picsum id>`. Contact-sheet every image before using it.
 
-**3. Audio grid.**
-- *No track:* `node music.mjs --bpm 120 --dur N --key A --mood bright|dark`. This writes `audio/music.wav` and `beats.json`.
-- *Supplied track:* `python beats.py audio/track.wav > beats.json` in a venv with librosa. Check by ear that beat 1 lands on a real downbeat.
-- Then put state changes on `beats`, big moments on `downbeats`, and SFX on `hits`.
+**3. Beat map.**
+- **Supplied or Mixkit track:**
+  1. `python3 drop.py audio/x.mp3` gives per-bar low-band energy and candidate drops.
+  2. `--zoom <t>` pins the drop to 20 ms.
+  3. `--drop <t> --at <film_t> --dur <s> > beats.json`.
+  4. Put the printed `offset` into `sound.json`.
+  **Never trust an automatic grid:** one real track's auto bar was 2 beats off.
+- **No track:** `node music.mjs --bpm 120 --dur N` writes `audio/music.wav` and `beats.json`, offset 0.
+- **Placement:** every scene starts on a beat, the drop lands on the key visual moment, nothing stays still for more than 1 s.
+- **Tempo by mood:** 60-80 BPM regal, 90-110 smooth, 115-123 sophisticated, above 125 hype.
 
-**4. Build `index.html`.** One object per shot in `SCENES`.
-- Position everything through `layout()` (`u()` units, `L.portrait/landscape`, `L.safe`) so other formats reframe instead of cropping.
-- Use springs from `lib/motion.js` for all motion. Any value with several targets uses `track()`, not a restarted spring.
-- Use `rng(seed)`, never `Math.random`.
-- Make something new happen every 2–4 s, with a hook in the first 2.
+**4. Build `index.html`.**
+- One object per shot in `SCENES`, and every hard cut listed in `FILM.cuts`.
+- Use `layout()` units throughout. Make shots shared-element handoffs where you can.
+- **Motion helpers:** springs and `track()` for motion, `camera()` for the one camera, `flood()` for colour transitions, `riseWords()` for type, `fitFont()` so titles fit the safe width at peak zoom.
+- **Seeking:** `rng(seed)`, never `Math.random`. Third-party libs only if they can be seeked (STUDIO_RULES.md).
 
-**5. Look at stills before animating everything.** `node render.mjs --w 540 --h 960 --stills 0.5,2,4,...` (one per shot), then **open the PNGs with vision**. Fix composition before motion.
+**5. Stills.**
+- Run `node render.mjs --w 540 --h 960 --stills 0.5,2,4.1,...` (one per shot) or `--beats` (one per beat), then **open them with vision**.
+- Fix composition before motion. One wrong still costs 2 minutes; the same problem found on a full render costs a full re-render.
 
-**6. Draft render plus critique loop, at least 3 rounds.**
-- Render at preview size: `node render.mjs --w 540 --h 960 --fps 30 --sub 1 --out out/draft.mp4`.
-- Run `bash qc.sh out/draft.mp4 <fast_action_t>`, then **look at** `contact.png`, `strip.png` and `phone.png`.
-- Score 1–10 on hook, phone readability, motion, variety, composition, brand, and sound sync. Log the scores and the 3 worst problems with timestamps in `docs/review_log.md`.
-- Fix them and re-render only the affected range (`--from/--to`). Repeat until every score is 8+. The critique prompt is §6 of `references/prompts.md`.
+**6. Draft plus critique, at least 3 rounds.**
+- Run `node render.mjs --w 1080 --h 1920 --draft`. That's a 540-pixel short side, 30 fps, no blur, so you're judging rhythm, not sharpness.
+- Then run `bash qc.sh out/draft.mp4 <fast_t>` and **look at** contact, strip and phone sheets.
+- **Score 1-10:** hook, phone readability, motion, variety, composition, brand/data accuracy, sound sync.
+- Log the scores and the 3 worst problems with timestamps in `docs/review_log.md`.
+- **Fix only shots scoring 7 or less**, and don't touch shots at 9+. Re-render only `--from/--to`. Repeat until everything is 8+.
+- For anything shipping publicly:
+  - run the critic as a **separate read-only sub-agent** (`delegate_task`, default reject)
+  - then have a fresh agent restate the message from the frames alone; if it can't, the film fails
 
-**7. Final.**
-- Video: `node render.mjs --w 1080 --h 1920 --fps 60 --sub 4 --out out/silent.mp4`.
-- SFX: `node sfx.mjs cues.json out/sfx.wav --dur N`.
-- Mix: `bash mix.sh out/silent.mp4 out/final.mp4`. It reports the integrated loudness, which should be about -14 LUFS.
-- More formats: `bash formats.sh` (sequential by default; `PARALLEL=1` only on machines with enough RAM).
-- Run `qc.sh` once more on the final file.
+**7. Master.**
+- **Render:** `node render.mjs --w 1080 --h 1920 --fps 60 --sub 8 --adaptive --out out/silent.mp4`. Use `--scale 2` for type-heavy films.
+- **Check:** `python3 qc.py out/silent.mp4` should report 0 unexplained pops, flashes or frozen runs. Add `--loop` for loops.
+- **Mix:** fill `sound.json` with cues (name, time, gain 0.04-0.3), then run `python3 mix.py --video out/silent.mp4 --out out/final.mp4`.
+- **Other formats:** `FORMATS="9x16 4x5 16x9" bash formats.sh --fps 60 --sub 8 --adaptive`.
+- **For X/Slack/Discord:** `bash poster0.sh out/final.mp4 out/poster.png out/final_poster.mp4`.
 
-**8. Deliver** `final.mp4`, `contact.png` and `poster.png`, plus any other formats. Give the duration, resolution, measured loudness, final review scores, and what you'd improve next. On Telegram, send with `MEDIA:/abs/path`.
+**8. Deliver.**
+- **Files:** the final MP4(s), contact.png and poster.png.
+- **Report:** duration, resolution, measured LUFS, final scores, what you'd improve, and a **true** caption: no "one prompt" or "made in 10 minutes" if it wasn't.
+- **Telegram:** `MEDIA:/abs/path`.
 
 ## Hard rules
 
-- **Render contract:** no CSS transitions, `setTimeout`, `requestAnimationFrame` (except the preview branch), or state carried between frames. `seek(t)` must give the same pixels whatever order it's called in. smoke_test.sh checks this by rendering the same range twice and comparing frame hashes.
-- **Banned looks:** a centered title on a gradient, everything fading in, corner labels and frame borders, glow on UI chrome, generic particle bursts, bouncy easing on type.
-- **Real product UI only.** Crop and animate the real thing.
-- **Look before claiming done.** Never report a render as good without opening the QC images. Use the `generated-asset-verification` habits.
-- **Keys:** API keys stay in `.env` and are referenced by name. Never paste them into prompts or files that get shared.
-- **Brand compositing:** for [brand] episodes the user composites in CapCut, so deliver clean elements rather than auto-compositing wordmarks or outros.
+- **Render contract:** `seek(t)` is pure. No CSS transitions, timers, rAF (except the preview loop), carried state, Date, or `Math.random`. smoke_test.sh checks this by comparing frame hashes across two renders.
+- **Truth on screen:**
+  - Numbers only from `docs/facts.md`.
+  - Anything illustrative is labelled "Example data".
+  - Real integrations only, e.g. "Native: X, Y. Anything else via webhook." Never invent features or imply partnerships with co-marks.
+  - Fictional people get generated faces and invented names.
+- **Anti-AI-look:**
+  - One accent, and one thing moving at a time.
+  - One visual system throughout, built from transformations rather than cuts.
+  - Springs damped to a ratio of 0.72 or more (the `playful` preset is for mascots only).
+  - **Banned:** gradient title cards, fade-everything, corner labels, glow, particles, rainbow, emoji, lorem ipsum, gratuitous 3D flips.
+- **Look before claiming done.** Never report a render as good without opening the QC images.
+- **Keys** stay in `.env`. If the user finishes in an editor (CapCut, Premiere), deliver clean elements instead of a composited cut.
 
 ## Pitfalls
 
-- **Use HTTP, not `file://`.** ES modules and `fetch('beats.json')` fail over `file://`. render.mjs serves the folder on a local HTTP server; to preview in a browser, run `npx http-server` or `python3 -m http.server`.
-- **Wait for fonts.** Canvas text needs loaded fonts: `window.ready` awaits `document.fonts.ready`. Use fonts installed locally (Inter is in `~/.fonts`) or self-host `.woff2` in `assets/` with `@font-face`. A missing font silently falls back and breaks the look.
-- **Use `toBlob`, not element screenshots.** render.mjs captures canvas bytes with `toBlob`, which always matches the canvas size exactly. Element screenshots in full Chrome can lose viewport pixels.
-- **Render time is CPU-bound.** Render time scales with fps × sub × duration × pixel area. On this 2-core box, a 540×960 render at 30 fps with sub 2 took about 9 s for 6 s of video. A full-HD 60 fps sub-4 final costs roughly 16× that per second of film, so draft small and finish once.
-- **Avoid `will-change` and CSS scaling on text.** They make scaled text blurry. Draw text at its final pixel size on canvas.
-- **Loop seam:** for loops the last frame must equal the first, cursor velocity included. qc.sh prints a first-vs-last frame difference, which should be near 0 for loops and doesn't matter for non-loops.
-- **Concurrent renders need unique `--out` paths.** Two encoders writing one file corrupts the moov atom.
-- **PEP 668:** install librosa in a venv (`python3 -m venv .venv && .venv/bin/pip install numpy librosa soundfile`). A global `pip install` silently does nothing here.
-- **Brief contagion:** the stock one-liner gives the same reel everyone else got. Use it only to test the setup, and get the idea from a reference, a story or a product.
+- **Subframes:** 4 ghost on fast moves, so use 8 for slams and whips with `--adaptive`, which keeps static frames at 1 sample. Blur never crosses `FILM.cuts`, so an undeclared cut double-exposes the cut frame.
+- **A transition must finish before its hard cut.** A flood still growing at the cut pops from circle to full frame, and qc.py flags it. The template's flood ends 0.13 s before its cut. Also check the frame's corners in a still.
+- **Type at peak zoom:** a title sized for zoom 1.0 clips at 1.06. Size titles with `fitFont(width / maxZoom)`. The 9:16 smoke test caught exactly this.
+- **Easing ends:** easings solved numerically return about 1e-9 at 0, so `if (e > 0)` guards fire early. Use the `E` easings, which return exact 0 and 1.
+- **Loops:** match position AND velocity (`loopTrack`, `qc.py --loop`), with integer cycles per loop (`cyc`).
+- **Use HTTP, not `file://`.** ES modules and fetch need HTTP. render.mjs serves the folder; to preview, run `python3 -m http.server`.
+- **Fonts:** wait for `document.fonts.ready` via `window.ready`. A missing font silently falls back. Inter is in `~/.fonts`; otherwise self-host the `.woff2`.
+- **Headless WebGL renders black:** set `WEBGL=1` (SwiftShader/ANGLE flags).
+- **Render cost on this 2-core box:** a 540×960 film at 30 fps took about 23 s for a 6 s draft and about 96 s for an 8-sub adaptive master. A full-HD 60 fps master costs roughly 8× more per second of film. Always draft small. One render at a time is enforced by a lock in `~/.hermes/data/motion-graphics/locks`, and stale locks clear themselves. chunks.sh only pays off on multi-core machines.
+- **Concurrent encodes:** need unique `--out` paths, or the moov atom gets corrupted.
+- **Python packages:** PEP 668 blocks global pip here. Use `/usr/bin/python3` for the numpy tools, and a venv for librosa.
+- **Mixkit's search ignores `?q=`.** assets.py crawls tag and genre pages instead. The SFX preview MP3s are short (around 0.3 s); place them by peak.
 
 ## Verification
 
-`bash ~/.hermes/skills/creative/motion-graphics/scripts/smoke_test.sh ~/.hermes/data/motion-graphics/smoke` scaffolds a project and runs the whole chain:
-- music, SFX, stills, a 6 s render, mix and QC
+Run `bash ~/.hermes/skills/creative/motion-graphics/scripts/smoke_test.sh ~/.hermes/data/motion-graphics/smoke`. It exercises:
+- scaffold, synthesized music, drop finder, stills and beat stills
+- draft, then an adaptive 8-sub master with a declared cut
+- peak-placed mix with two-pass loudnorm
+- qc.py, qc.sh, poster0
 - the determinism check
-- 16:9 and 1:1 reframes
+- 16:9, 1:1 and 4:5 reframes
 
-It should end with `determinism: identical frames`, an integrated loudness of about -14 LUFS, and `SMOKE OK`. Last verified on this box 2026-10-02: 540×960 at 30 fps, -14.2 LUFS, identical frames.
+It should end with `QC: PASS`, `determinism: identical frames`, -14.0 LUFS and `SMOKE OK`.
+
+Last run on this box on 2026-10-02:
+- draft 23.7 s
+- master 96.4 s, samples {1: 98, 4: 68, 8: 14}
+- -14.0 LUFS, 0 pops, 0 flashes
+- identical frames

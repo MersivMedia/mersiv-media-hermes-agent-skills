@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- index.html — remake stage. Loads project.json (fps, size, brand tokens, groups, assets), then core.js, then
+     every shots/<G>.js. Build agents never edit this file or core.js. -->
+<html><head><meta charset="utf-8"><title>remake</title>
+<style>
+html,body{margin:0;background:#fff}
+#stage{position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage *{box-sizing:border-box}
+</style></head>
+<body><div id="stage"></div>
+<script>
+(async () => {
+  const P = await (await fetch('project.json')).json();
+  window.PROJECT = P;
+  const st = document.getElementById('stage');
+  Object.assign(st.style, { width: P.w + 'px', height: P.h + 'px', background: P.tokens.bg, color: P.tokens.ink, fontFamily: P.tokens.font });
+  for (const f of P.fonts || []) document.fonts.add(await new FontFace(f.family, `url(${f.url})`, { weight: f.weight || '100 900' }).load());
+  const load = src => new Promise(r => { const s = document.createElement('script'); s.src = src; s.onload = s.onerror = r; document.head.appendChild(s); });
+  await load('core.js');
+  for (const g of Object.keys(P.groups)) await load(`shots/${g}.js`);
+  await document.fonts.ready;
+  await Promise.all((P.preload || []).map(n => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'assets/' + n; })));
+  window.seek(0); window.ready = true;
+})();
+</script></body></html>

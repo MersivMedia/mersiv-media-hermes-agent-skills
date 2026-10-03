@@ -1,0 +1,22 @@
+{
+  "name": "remake",
+  "fps": 24,
+  "w": 1920,
+  "h": 1080,
+  "ref_brand": "OLD BRAND",
+  "brand": "NEW BRAND",
+  "label_left": "original",
+  "label_right": "code remake",
+  "tokens": {
+    "bg": "#ffffff", "ink": "#0f172a", "sub": "#64748b", "line": "#e5e7eb", "soft": "#f5f7fa",
+    "a1": "#38bdf8", "a2": "#a78bfa",
+    "grad": "linear-gradient(90deg,#38bdf8 0%,#a78bfa 100%)",
+    "font": "'Inter', -apple-system, Helvetica, Arial, sans-serif"
+  },
+  "mark": "logo-mark.png",
+  "fonts": [],
+  "preload": [],
+  "oldHues": [[330, 360, 199], [0, 45, 199]],
+  "oldColorScan": {"rMin": 180, "rgGap": 60, "rbGap": 60, "gMin": 60, "minPixels": 150},
+  "groups": {"G1": [0, 120], "G2": [120, 240]}
+}

@@ -1,6 +1,6 @@
 # Mersiv Media Hermes Agent Skills
 
-59 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
+61 [Hermes Agent](https://github.com/NousResearch/hermes-agent) skills for generative video, voice, music, GPU-cloud, research, consulting deliverables and web-tool work, pulled from Mersiv Media's production setup.
 
 | Skill | Category | What it does |
 |---|---|---|
@@ -18,6 +18,7 @@
 | [`generated-asset-verification`](creative/generated-asset-verification/) | `creative` | Verify AI-generated images and video before shipping. |
 | [`generative-media-pipeline-design`](creative/generative-media-pipeline-design/) | `creative` | Architect live/interactive generative video pipelines. |
 | [`motion-graphics`](creative/motion-graphics/) | `creative` | Use when making motion graphics videos rendered from code. |
+| [`motion-remake`](creative/motion-remake/) | `creative` | Use when remaking an existing video frame by frame for a new brand. |
 | [`motion-trainer-for-generative-video`](creative/motion-trainer-for-generative-video/) | `creative` | Train motion LoRAs and insert avatars in AI video. |
 | [`notebooklm-brand-edit`](creative/notebooklm-brand-edit/) | `creative` | Re-brand NotebookLM-generated videos with [brand] identity. Detects scene cuts, recolors light-themed scene… |
 | [`notebooklm-pdf-slideshow`](creative/notebooklm-pdf-slideshow/) | `creative` | Convert a NotebookLM-exported slideshow PDF into a numbered set of horizontal JPG slides plus AI-generated… |
@@ -50,6 +51,7 @@
 | [`executive-stakeholder-research`](research/executive-stakeholder-research/) | `research` | Map a company's executives and board from SEC primaries. |
 | [`research-design-documents`](research/research-design-documents/) | `research` | Propose a novel architecture; prove it's not a relabel. |
 | [`research-to-notebooklm`](research/research-to-notebooklm/) | `research` | Curate 8-10 high-quality sources on a topic and drop a clean URL list into Drive for the user to feed into… |
+| [`social-post-extraction`](research/social-post-extraction/) | `research` | Use when reading X/Twitter posts or Articles without login. |
 | [`ai-ad-monetized-websites`](software-development/ai-ad-monetized-websites/) | `software-development` | Build profitable AI-powered websites optimized for ad revenue - complete end-to-end process from niche rese… |
 | [`ai-tool-deployment-troubleshooting`](software-development/ai-tool-deployment-troubleshooting/) | `software-development` | Diagnose and fix failing Vercel builds and AI tool deploys. |
 | [`ai-tool-portfolio-builder`](software-development/ai-tool-portfolio-builder/) | `software-development` | Build multiple AI-powered tools rapidly using a proven template approach for maximum ad revenue generation |

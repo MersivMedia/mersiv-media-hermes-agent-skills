@@ -2,46 +2,60 @@
 <!-- index.html — the film. window.seek(t) paints the exact frame for time t.
      Size comes from the URL (?w=1080&h=1920) so one timeline renders every format.
      Rules: no CSS transitions, no setTimeout, no requestAnimationFrame in render mode,
-     no state carried between frames, seeded noise only. -->
+     no state carried between frames, seeded noise only. Declare all constants before the first seek().
+     Preview (open over http, not file://): Space play/pause · ←/→ ±0.5 s (Shift = 1 frame) · R replay ·
+     click the bar to scrub · ?t=4.2 deep link. The clock lives ONLY in the preview loop; the render never touches it. -->
 <meta charset="utf-8">
-<style>html,body{margin:0;background:#141413;overflow:hidden}canvas{display:block}</style>
+<style>
+  html,body{margin:0;background:#0b0b0c;overflow:hidden}
+  canvas{display:block}
+  #hud{position:fixed;left:0;right:0;bottom:0;height:34px;background:rgba(0,0,0,.6);color:#ddd;font:12px/34px ui-monospace,monospace;padding:0 10px;display:none;cursor:pointer;user-select:none}
+  #hud .bar{position:absolute;left:0;top:0;height:3px;background:#D97757}
+</style>
 <canvas id="c"></canvas>
+<div id="hud"><div class="bar"></div><span id="hudt"></span></div>
 <script type="module">
-import { clamp, sp, track, swapAlpha, rng, layout, pulse } from './lib/motion.js';
+import { clamp, E, P, sp, track, rng, layout, pulse, beatIndex, camera, applyCamera, flood, riseWords, drift, fitFont } from './lib/motion.js';
 
 const q = new URLSearchParams(location.search);
-const W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const W = +q.get('w') || 1080, H = +q.get('h') || 1920, RENDER = q.has('render');
 const cv = document.getElementById('c'); cv.width = W; cv.height = H;
-const g = cv.getContext('2d');
+const g = cv.getContext('2d', { willReadFrequently: true });
 const L = layout(W, H), u = L.u;
 
-// Edit these per film. BEATS is replaced by beats.json content at build time or fetched below.
-const FILM = { dur: 6, bg: '#141413', ink: '#F0EEE6', accent: '#D97757',
+// ---- the film. cuts = hard-cut times (motion blur never straddles them; qc.py treats pops there as intended)
+const FILM = { dur: 6, cuts: [3], bg: '#141413', ink: '#F0EEE6', accent: '#D97757',
   display: '700 {px}px "Inter", system-ui, sans-serif', ui: '500 {px}px "Inter", system-ui, sans-serif' };
 const font = (tpl, px) => tpl.replace('{px}', Math.round(px));
-let BEATS = { bpm: 120, beats: Array.from({ length: 64 }, (_, i) => i * 0.5) };
+let BEATS = { bpm: 120, beats: Array.from({ length: 64 }, (_, i) => i * 0.5), downbeats: Array.from({ length: 16 }, (_, i) => i * 2) };
+
+// Camera keys [t, zoom, x, y] in world coordinates (world = the W x H frame). Never zoom in then out back-to-back.
+const CAM = [[0, 1.0, L.cx, L.cy], [3, 1.06, L.cx, L.cy], [6, 1.0, L.cx, L.cy]];
 
 // One object per shot: { from, to, draw(t, T) } with t = local time, T = global time.
 const SCENES = [
-  { from: 0, to: 3, draw(t) {                                   // kinetic title on the downbeat
-      const s = sp(t - 0.05, 'heavy');
-      g.save(); g.translate(L.cx, L.cy);
-      g.scale(0.7 + 0.3 * s, 0.7 + 0.3 * s);
-      g.globalAlpha = clamp(t * 6);
-      g.fillStyle = FILM.ink; g.font = font(FILM.display, u(190));
-      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('MOTION', 0, 0);
-      g.fillStyle = FILM.accent; const bw = u(640) * sp(t - 0.25, 'snappy');
-      g.fillRect(-bw / 2, u(120), bw, u(18));
+  { from: 0, to: 3, draw(t, T) {                              // masked word rise on the downbeat, bar draws in, flood out
+      const cam = camera(T, CAM, { beats: BEATS, drop: 3 });
+      g.save(); applyCamera(g, cam, L);
+      // fit the title inside the safe width at the camera's peak zoom (never let type run off the edge)
+      const px = fitFont(g, 'Motion that moves', (W - 2 * L.safe.x) / 1.08, FILM.display, u(120));
+      riseWords(g, 'Motion that moves', L.cx, L.cy, t, 0.1, { font: font(FILM.display, px), color: FILM.ink,
+        accent: { moves: FILM.accent }, out: 2.2 });
+      const bw = Math.min(u(560), W - 2 * L.safe.x) * sp(t - 0.6, 'snappy') * (1 - P(t, 2.2, 0.3, E.in));
+      g.fillStyle = FILM.accent; g.fillRect(L.cx - bw / 2, L.cy + px * 0.6, bw, u(14));
       g.restore();
+      // flood must FINISH before the cut (2.55 + 0.32 = 2.87 < 3.0), or the cut pops from circle to full frame
+      flood(g, t, 2.55, L.cx, L.cy + px * 0.6, W, H, FILM.accent);
   }},
-  { from: 3, to: 6, draw(t, T) {                               // staggered grid that pulses on the beat
+  { from: 3, to: 6, draw(t, T) {                              // staggered grid enters already moving, pulses on the beat
+      g.fillStyle = FILM.accent; g.fillRect(0, 0, W, H * (1 - P(t, 0, 0.35, E.o5)));   // the flood exits downward
       const r = rng(7), cols = L.landscape ? 10 : 6, rows = L.landscape ? 4 : 8;
       const cell = Math.min((W - 2 * L.safe.x) / cols, (H - 2 * L.safe.y) / rows);
-      const ox = (W - cols * cell) / 2 + cell / 2, oy = (H - rows * cell) / 2 + cell / 2;
+      const ox = (W - cols * cell) / 2 + cell / 2, oy = (H - rows * cell) / 2 + cell / 2 + drift(T, u(4));
       const p = pulse(T, BEATS, 10);
       for (let i = 0; i < cols * rows; i++) {
         const x = ox + (i % cols) * cell, y = oy + Math.floor(i / cols) * cell;
-        const s = sp(t - i * 0.02 - r() * 0.1, 'snappy') * (0.82 + 0.08 * p);
+        const s = sp(t - 0.1 - i * 0.02 - r() * 0.1, 'snappy') * (0.82 + 0.08 * p);
         g.fillStyle = i % 7 ? FILM.ink : FILM.accent;
         g.fillRect(x - cell * 0.4 * s, y - cell * 0.4 * s, cell * 0.8 * s, cell * 0.8 * s);
       }
@@ -58,14 +72,29 @@ function draw(T) {
 window.FILM = FILM;
 window.ready = (async () => {
   try { const r = await fetch('./beats.json'); if (r.ok) BEATS = await r.json(); } catch {}
-  await document.fonts.ready;
+  await document.fonts.load(font(FILM.display, 100)); await document.fonts.ready;
   return true;
 })();
 window.seek = (t) => { draw(t); return true; };
 
-// Live preview in a normal browser; off during headless render (navigator.webdriver is true there).
-if (!navigator.webdriver) {
-  window.ready.then(() => { const t0 = performance.now();
-    (function loop() { draw(((performance.now() - t0) / 1000) % FILM.dur); requestAnimationFrame(loop); })(); });
+// ---- preview controls (never active in render mode)
+if (!RENDER && !navigator.webdriver) {
+  const hud = document.getElementById('hud'), bar = hud.querySelector('.bar'), hudt = document.getElementById('hudt');
+  hud.style.display = 'block';
+  let playing = true, t = +q.get('t') || 0, last = performance.now();
+  let audio = null; try { audio = new Audio('./out/mix.wav'); } catch {}
+  const sync = () => { if (audio && audio.readyState) { audio.currentTime = t; playing ? audio.play().catch(() => {}) : audio.pause(); } };
+  const show = () => { draw(t); bar.style.width = (100 * t / FILM.dur) + '%';
+    hudt.textContent = `${t.toFixed(2)}s / ${FILM.dur}s · beat ${beatIndex(t, BEATS) + 1} · ${playing ? '▶' : '❚❚'} · space ←/→ shift R`; };
+  addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { playing = !playing; sync(); }
+    else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { playing = false; t = clamp(t + (e.code === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 / 60 : 0.5), 0, FILM.dur); sync(); }
+    else if (e.code === 'KeyR') { t = 0; playing = true; sync(); }
+    show(); e.preventDefault();
+  });
+  hud.addEventListener('click', (e) => { t = FILM.dur * e.clientX / innerWidth; sync(); show(); });
+  window.ready.then(() => { sync(); (function loop(now) {
+    if (playing) { t += (now - last) / 1000; if (t >= FILM.dur) { t = 0; sync(); } }
+    last = now; show(); requestAnimationFrame(loop); })(performance.now()); });
 }
 </script>
