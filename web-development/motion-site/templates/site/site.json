@@ -1,0 +1,28 @@
+{
+  "title": "Northwind Roasters — small-batch coffee, roasted to order",
+  "brand": {
+    "name": "Northwind Roasters",
+    "logo": "",
+    "fonts_css": "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;600&display=swap",
+    "vars": {
+      "bg": "#0c0a08", "ink": "#f4ede4", "muted": "#b9ab9b", "accent": "#e8a24a",
+      "display": "'Fraunces', Georgia, serif", "body": "'Inter', system-ui, sans-serif",
+      "tint": "rgba(30, 16, 6, .28)", "grain": ".08", "vignette": ".6"
+    }
+  },
+  "cta": { "label": "Order beans", "href": "#order" },
+  "pacing": { "lerp": 0.085, "scrub": 0.6 },
+  "sections": [
+    { "id": "hero", "length": 320, "eyebrow": "Example data · fictional brand", "title": "Roasted the morning\nit ships.",
+      "body": "Small-batch coffee from three farms we visit every harvest.", "particles": true },
+    { "id": "craft", "length": 280, "align": "right", "eyebrow": "The roast", "title": "Twelve minutes.\nNo shortcuts.",
+      "body": "Every batch is roasted by hand in a 15 kg drum and cupped before it leaves." },
+    { "id": "proof", "type": "block", "eyebrow": "Example data", "title": "Why people switch",
+      "cards": [ { "big": "48 h", "small": "roast to doorstep" }, { "big": "3", "small": "direct-trade farms" }, { "big": "0", "small": "stale bags, ever" } ],
+      "note": "Illustrative numbers for a demo site." },
+    { "id": "pour", "length": 260, "align": "center", "title": "Taste the difference.", "button": { "label": "Order beans", "href": "#order" } },
+    { "id": "order", "type": "block", "title": "Start a subscription", "body": "Pick a roast, a grind and a schedule. Pause any time.",
+      "button": { "label": "Choose your roast", "href": "#" } }
+  ],
+  "footer": "Demo built with the motion-site skill"
+}

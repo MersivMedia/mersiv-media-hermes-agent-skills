@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .env
 .usage.json
+
+# third-party prompt corpus (prompt-motion.com): prompts belong to their creators, local use only
+creative/motion-graphics/assets/prompt-motion/
+creative/motion-graphics/references/prompt-motion-catalog.md

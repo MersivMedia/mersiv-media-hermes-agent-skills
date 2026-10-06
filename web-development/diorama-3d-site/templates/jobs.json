@@ -1,0 +1,12 @@
+{
+  "site_dir": "..",
+  "image_model": "google/nano-banana-pro",
+  "mesh_model": "tencent/hunyuan-3d-3.1",
+  "images": [
+    { "id": "hero", "prompt": "A hand-built mechanical desk clock with an exposed brass movement, polished steel bezel and a smoked glass dome, on a small walnut plinth." }
+  ],
+  "meshes": [
+    { "id": "hero", "image": "hero", "faces": 200000, "pbr": true }
+  ],
+  "_notes": "Plates are generated on white with dioramas' product suffix (set raw:true to skip it). Look at every plate before --stage meshes. Optional per-mesh: model: hyper3d/rodin (quality, mesh_mode). Page slug: __SLUG__."
+}

@@ -1,0 +1,21 @@
+{
+  "site_dir": ".",
+  "still_model": "black-forest-labs/flux-2-pro",
+  "video_model": "bytedance/seedance-1-lite",
+  "resolution": "720p",
+  "aspect_ratio": "16:9",
+  "style": "Cinematic product photography, 35mm, shallow depth of field, warm tungsten key light with deep shadows, rich blacks, subtle film grain, editorial color grade. Leave clean negative space on the left third for headline text. No text, no logos, no watermark.",
+  "brand_refs": [],
+  "sections": [
+    { "id": "hero", "role": "hero", "seconds": 5,
+      "still": "Close-up of freshly roasted coffee beans tumbling out of a matte black drum roaster's cooling tray, wisps of steam, dark workshop background.",
+      "motion": "Slow push-in toward the beans as they tumble and settle; steam drifts upward; gentle continuous camera move." },
+    { "id": "craft", "role": "feature", "seconds": 5,
+      "still": "A roaster's hands lifting a brass trier from a vintage coffee roaster, beans glowing amber in a beam of window light, workshop interior.",
+      "motion": "Camera slowly orbits right around the roaster; dust motes float in the light beam; beans shift in the trier." },
+    { "id": "pour", "role": "cta", "seconds": 5,
+      "still": "Pour-over coffee: a thin stream of water from a gooseneck kettle onto a bloom of coffee grounds in a ceramic dripper, dark background, rim light.",
+      "end_still": "",
+      "motion": "Slow vertical dolly down following the water stream into the blooming grounds; bubbles rise; steam curls." }
+  ]
+}

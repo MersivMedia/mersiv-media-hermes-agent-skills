@@ -516,7 +516,7 @@ result = patch(
 ### 6. Create ads.txt File for AdSense Verification
 ```bash
 # Create public/ads.txt
-echo "google.com, pub-5838020439812802, DIRECT, f08c47fec0942fa0" > public/ads.txt
+echo "google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0" > public/ads.txt
 git add public/ads.txt && git commit -m "Add ads.txt for AdSense verification" && git push
 ```
 
@@ -536,7 +536,7 @@ git add public/ads.txt && git commit -m "Add ads.txt for AdSense verification" &
 </script>
 
 <!-- Google Funding Choices (CMP) -->
-<script async src="https://fundingchoicesmessages.google.com/i/pub-5838020439812802?ers=1" nonce=""></script>
+<script async src="https://fundingchoicesmessages.google.com/i/pub-XXXXXXXXXXXXXXXX?ers=1" nonce=""></script>
 <script nonce="">
   (function() {
     function signalGooglefcPresent() {

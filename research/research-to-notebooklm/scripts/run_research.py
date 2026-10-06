@@ -41,7 +41,7 @@ ROOT = Path(
 ROOT.mkdir(parents=True, exist_ok=True)
 MANIFEST = ROOT / "_manifest.json"
 TOPICS_FILE = ROOT / "topics.json"
-PARENT_FOLDER_ID = os.environ.get("BLOGS_PARENT_FOLDER_ID", "1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-")
+PARENT_FOLDER_ID = os.environ["BLOGS_PARENT_FOLDER_ID"]
 GAPI_SCRIPT = os.path.expanduser("~/.hermes/skills/productivity/google-workspace/scripts/google_api.py")
 
 PRIORITY = {

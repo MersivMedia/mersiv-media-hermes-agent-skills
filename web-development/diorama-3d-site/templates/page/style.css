@@ -1,0 +1,25 @@
+:root { --bg: #08080a; --ink: #f1eee9; --muted: #a29d96; --accent: #e6b45c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Manrope", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100svh; display: block; }
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(20px, 4vw, 56px); }
+.brand { font: 800 15px/1 "Manrope"; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.nav-cta, .btn { color: var(--bg); background: var(--accent); padding: 13px 20px; border-radius: 999px; font-weight: 700; font-size: 14px; text-decoration: none; display: inline-block; }
+main { position: relative; z-index: 2; pointer-events: none; }
+main a, main button { pointer-events: auto; }
+.sec { min-height: 120vh; display: flex; flex-direction: column; justify-content: center; padding: 0 clamp(20px, 6vw, 96px); max-width: 760px; }
+.sec.right { margin-left: auto; text-align: right; }
+.sec.center { margin: 0 auto; text-align: center; align-items: center; }
+.eyebrow { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
+.h1, .h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; line-height: .92; letter-spacing: -.01em; margin: 0; }
+.h1 { font-size: clamp(56px, 9vw, 148px); }
+.h2 { font-size: clamp(40px, 6vw, 96px); }
+.h1 em, .h2 em { color: var(--accent); }
+.lede { color: var(--muted); font-size: clamp(16px, 1.4vw, 20px); line-height: 1.55; margin: 22px 0 0; max-width: 480px; }
+.sec.right .lede { margin-left: auto; }
+.hint { margin-top: 34px; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.btn { margin-top: 30px; }
+.foot { position: relative; z-index: 2; padding: 40px clamp(20px, 4vw, 56px); color: var(--muted); font-size: 12px; }
+.loader { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--bg); }
+.loader-n { font: 400 clamp(60px, 10vw, 140px)/1 "Instrument Serif", serif; color: var(--ink); }
+@media (max-width: 720px) { .sec.right { text-align: left; margin-left: 0; } .sec.right .lede { margin-left: 0; } .nav-cta { display: none; } }

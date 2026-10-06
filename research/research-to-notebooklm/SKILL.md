@@ -19,8 +19,8 @@ This keeps token cost low and matches what NotebookLM does natively (it ingests 
 ## Parent Drive folder
 
 ```
-https://drive.google.com/drive/folders/1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-
-PARENT_FOLDER_ID=1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-
+https://drive.google.com/drive/folders/<your-blogs-folder-id>
+PARENT_FOLDER_ID=<your-blogs-folder-id>
 ```
 
 All topic subfolders go inside this folder. Override at runtime with `BLOGS_PARENT_FOLDER_ID`.
@@ -67,7 +67,7 @@ To pick the next number, list existing folders in Blogs/ and take max+1:
 
 ```bash
 GAPI="python3 ${HERMES_HOME:-$HOME/.hermes}/skills/productivity/google-workspace/scripts/google_api.py"
-$GAPI drive search "'1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-' in parents and mimeType='application/vnd.google-apps.folder'" --raw-query --max 50
+$GAPI drive search "'$BLOGS_PARENT_FOLDER_ID' in parents and mimeType='application/vnd.google-apps.folder'" --raw-query --max 50
 ```
 
 Parse the leading `NN -` from each name. Numbers may not be contiguous if folders were renamed; always go off the max.
@@ -184,7 +184,7 @@ If a URL fails, drop it and substitute the next-ranked candidate. Topics in the 
 
 ```bash
 GAPI="python ${HERMES_HOME:-$HOME/.hermes}/skills/productivity/google-workspace/scripts/google_api.py"
-PARENT="1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-"
+PARENT="${BLOGS_PARENT_FOLDER_ID:?set BLOGS_PARENT_FOLDER_ID}"
 
 # Topic folder
 $GAPI drive create-folder "<Topic Display Name>" --parent $PARENT
@@ -253,7 +253,7 @@ For one-off "research topic X" requests, skip the batch runner and do it manuall
 
 ```bash
 GAPI="python3 ${HERMES_HOME:-$HOME/.hermes}/skills/productivity/google-workspace/scripts/google_api.py"
-BLOGS_PARENT="1Ry1eiSUiFa5ewekLur3gDahllaiMDxX-"
+BLOGS_PARENT="${BLOGS_PARENT_FOLDER_ID:?set BLOGS_PARENT_FOLDER_ID}"
 
 # 1. List existing numbered folders, find max number
 $GAPI drive search "'$BLOGS_PARENT' in parents and mimeType='application/vnd.google-apps.folder'" --raw-query --max 50
